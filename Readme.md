@@ -45,7 +45,7 @@
 
   // validation use schema rules
   console.log(user.validate({validate: true})); // OK
-  user.email = "pgatjogabo.com";
+  user.email = "johnyatgmail.com";
   console.log(user.validate({validate: true})); // KO
   ```
 
