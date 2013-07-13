@@ -6,12 +6,11 @@
 
 
   ```js
-  	// load dependencies
 		var backbone  = require('backbone')
 		, climongoose = require('climongoose')
 		, model = climongoose.model(backbone)
 
-		// create a User Model
+			// create a User Model
 		,	User = model('User', {
 			  email: {type: String, required: true, match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/},
 			  age: {type: Number, min: 13},
@@ -22,7 +21,7 @@
 			  }
 			})
 
-		// create an instance
+			// create an instance
 		, user = new User({
 		  email: "john@gmail.com",
 		  name: {first: 'john', last: 'mcenroe'},
