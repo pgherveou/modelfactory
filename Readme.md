@@ -1,8 +1,7 @@
 # climongoose
-
-  Reuse mongoose schema definition in your frontend code
-  The project only implement basic mongoose features
-
+  
+  W.I.P - Reuse mongoose schema definition in your frontend code
+  The project only implement basic mongoose features for now
 
   - enable . notation to access model properties instead of get() set()
   - define basic Types (string, boolean, date, number)
