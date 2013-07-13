@@ -4,6 +4,9 @@
   Reuse mongoose schema definition in your frontend code
   The project only implement basic mongoose features
 
+  - enable . notation to access model properties instead of get() set()
+  - define basic Types (string, boolean, date, number)
+  - reuse validation logic and define default validators (min, max, required, enum, match)
 
   ```js
     var backbone  = require('backbone')
@@ -29,7 +32,8 @@
       date: new Date()
     });
 
-  // climongoose define getter/setter accessor using Object.defineProperty for each property of your schema
+  // climongoose define getter/setter accessor
+  // using Object.defineProperty for each property of your schema
   console.log('email:', user.email);
   user.on('change:email', function() {// this will be called});
   user.email = 'johny@gmail.com'
