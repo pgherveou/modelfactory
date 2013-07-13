@@ -1,12 +1,13 @@
-
 # climongoose
 
   Reuse mongoose schema definition in your frontend code
   The project only implement basic mongoose features
 
+
   - enable . notation to access model properties instead of get() set()
   - define basic Types (string, boolean, date, number)
   - reuse validation logic and define default validators (min, max, required, enum, match)
+
 
   ```js
     var backbone  = require('backbone')
