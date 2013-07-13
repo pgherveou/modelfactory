@@ -1,12 +1,12 @@
-
 # climongoose
-
-  Reuse mongoose schema definition in your frontend code
-  The project only implement basic mongoose features
+  
+  W.I.P - Reuse mongoose schema definition in your frontend code
+  The project only implement basic mongoose features for now
 
   - enable . notation to access model properties instead of get() set()
   - define basic Types (string, boolean, date, number)
   - reuse validation logic and define default validators (min, max, required, enum, match)
+
 
   ```js
     var backbone  = require('backbone')
@@ -45,7 +45,7 @@
 
   // validation use schema rules
   console.log(user.validate({validate: true})); // OK
-  user.email = "pgatjogabo.com";
+  user.email = "johnyatgmail.com";
   console.log(user.validate({validate: true})); // KO
   ```
 
@@ -54,6 +54,11 @@
   Install with [component(1)](http://component.io):
 
     $ component install pgherveou/climongoose
+
+## supported browsers
+
+should work on any browser supporting Object.defineProperty 
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
 
 
 ## License
