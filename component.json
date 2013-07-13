@@ -1,0 +1,24 @@
+{
+  "name": "climongoose",
+  "repo": "pgherveou/climongoose",
+  "description": "reuse mongoose schema definition in your frontend code",
+  "version": "0.0.1",
+  "keywords": [],
+  "dependencies": {},
+  "development": {
+    "chaijs/chai": "*"
+  },
+  "license": "MIT",
+  "main": "lib/index.js",
+  "scripts": [
+    "lib/index.js",
+    "lib/schema.js",
+    "lib/schemaType.js",
+    "lib/errors/validator.js",
+    "lib/schema/index.js",
+    "lib/schema/date.js",
+    "lib/schema/boolean.js",
+    "lib/schema/number.js",
+    "lib/schema/string.js"
+  ]
+}
