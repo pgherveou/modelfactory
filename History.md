@@ -1,4 +1,9 @@
 
+0.0.9 / 2013-07-14
+==================
+
+  * fix validation bug add string/array format for specific path validation
+
 0.0.8 / 2013-07-14
 ==================
 
