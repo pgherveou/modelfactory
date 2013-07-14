@@ -29,6 +29,8 @@ var schema = new Schema({
 
   date: {type: Date},
 
+  projects: [String],
+
   name: {
     first: {
       type: String,
@@ -75,6 +77,7 @@ describe('climongoose specs', function() {
       age: 44,
       creditcard: "123-456-789",
       sex: 'male',
+      projects: ['project1', 'project2'],
       date: new Date()
     });
   });
@@ -105,6 +108,11 @@ describe('climongoose specs', function() {
   it('should get nested property', function() {
     expect(user.name.first).to.eq('john');
   });
+
+  it('should get an array property', function() {
+    expect(user.projects).to.deep.equal(['project1', 'project2']);
+  });
+
 
   it('should use path getter', function() {
     expect(user.creditcard).to.eq('123**********');
