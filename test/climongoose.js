@@ -161,6 +161,7 @@ describe('climongoose specs', function() {
     var errs = user.validate({validate: true});
     expect(errs).to.be.ok;
     expect(errs).to.have.length(2);
+    expect(errs).to.have.deep.property('[0].type', 'required');
   });
 
   it('should reject not matching string', function() {
@@ -168,6 +169,8 @@ describe('climongoose specs', function() {
     var errs = user.validate({validate: true});
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'email');
+    expect(errs).to.have.deep.property('[0].type', 'match');
   });
 
   it('should reject unkown enum value', function() {
@@ -175,6 +178,8 @@ describe('climongoose specs', function() {
     var errs = user.validate({validate: true});
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'sex');
+    expect(errs).to.have.deep.property('[0].type', 'enum');
   });
 
   it('should reject number below min', function() {
@@ -182,6 +187,8 @@ describe('climongoose specs', function() {
     var errs = user.validate({validate: true});
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'age');
+    expect(errs).to.have.deep.property('[0].type', 'min');
   });
 
   it('should reject number above max', function() {
@@ -189,7 +196,28 @@ describe('climongoose specs', function() {
     var errs = user.validate({validate: true});
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'age');
+    expect(errs).to.have.deep.property('[0].type', 'max');
   });
+
+  it('should only validate specifed paths string format', function() {
+    user.email = 'john[at]gmail.com';
+    user.age = 205;
+    var errs = user.validate({paths: 'email', validate: true});
+    expect(errs).to.be.ok;
+    expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'email');
+  });
+
+  it('should only validate specifed paths array format', function() {
+    user.email = 'john[at]gmail.com';
+    user.age = 205;
+    var errs = user.validate({paths: ['email'], validate: true});
+    expect(errs).to.be.ok;
+    expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'email');
+  });
+
 
 });
 
