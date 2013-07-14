@@ -90,6 +90,11 @@ describe('climongoose specs', function() {
     user = null;
   });
 
+  it('should expose Schema and Error', function() {
+    expect(climongoose.Schema).to.be.ok;
+    expect(climongoose.Error).to.be.ok;
+  });
+
   it('should be a backbone model', function() {
     expect(user).to.be.an.instanceof(Backbone.Model);
   });

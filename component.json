@@ -2,7 +2,7 @@
   "name": "climongoose",
   "repo": "pgherveou/climongoose",
   "description": "reuse mongoose schema definition in your frontend code",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "dependencies": {},
   "development": {
     "chaijs/chai": "*"
@@ -16,6 +16,7 @@
     "lib/type.js",
     "lib/schemaType.js",
     "lib/virtualType.js",
+    "lib/errors/index.js",
     "lib/errors/validator.js",
     "lib/schema/index.js",
     "lib/schema/date.js",
