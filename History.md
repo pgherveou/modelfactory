@@ -1,4 +1,9 @@
 
+0.0.7 / 2013-07-14
+==================
+
+  * use Backbone.Model instead of Backbone in model function
+
 0.0.6 / 2013-07-13
 ==================
 
