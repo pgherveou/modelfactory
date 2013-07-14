@@ -14,7 +14,7 @@ var schema = new Schema({
 
   sex: {
     type: String,
-    enum: ['male', 'female', 'unkown']
+    enum: ['unkown', 'female', 'male']
   },
 
   creditcard: {
