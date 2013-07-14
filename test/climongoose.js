@@ -31,6 +31,8 @@ var schema = new Schema({
 
   projects: [String],
 
+  keywords: {type: [String], required: true},
+
   name: {
     first: {
       type: String,
@@ -78,6 +80,7 @@ describe('climongoose specs', function() {
       creditcard: "123-456-789",
       sex: 'male',
       projects: ['project1', 'project2'],
+      keywords: ['foo', 'bar'],
       date: new Date()
     });
   });
@@ -111,6 +114,7 @@ describe('climongoose specs', function() {
 
   it('should get an array property', function() {
     expect(user.projects).to.deep.equal(['project1', 'project2']);
+    expect(user.keywords).to.deep.equal(['foo', 'bar']);
   });
 
 
