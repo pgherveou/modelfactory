@@ -13,7 +13,7 @@
   ```js
     var backbone  = require('backbone')
     , climongoose = require('climongoose')
-    , model = climongoose.model(backbone);
+    , model = climongoose.model(backbone.Model);
 
     // create a User Model
     var User = model('User', {

@@ -1,7 +1,7 @@
 var climongoose = require('climongoose')
 , chai = require('chai')
 , expect = chai.expect
-, model = climongoose.model(Backbone)
+, model = climongoose.model(Backbone.Model)
 , Schema = climongoose.Schema;
 
 
