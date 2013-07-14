@@ -47,12 +47,20 @@ schema.path('creditcard').get(function(v) {
 });
 
 
+schema.method('hello', function() {
+  return 'hello ' + this.name.first;
+});
+
+
+schema.static('version', function() {
+  return '0.1';
+});
+
 schema.virtual('name.full').get(function() {
   return this.name.first + ' ' + this.name.last;
 });
 
 var User = model('User', schema);
-
 
 var user = null;
 
@@ -78,6 +86,16 @@ describe('climongoose specs', function() {
 
   it('should be a backbone model', function() {
     expect(user).to.be.an.instanceof(Backbone.Model);
+  });
+
+  it('should have defined instance methods', function() {
+    expect(user).to.respondTo('hello');
+    expect(user.hello()).to.eq('hello john');
+  });
+
+  it('should have defined statics method', function() {
+    expect(User).itself.to.respondTo('version');
+    expect(User.version()).to.eq('0.1');
   });
 
   it('should get property', function() {

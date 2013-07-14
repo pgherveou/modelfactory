@@ -1,4 +1,10 @@
 
+0.0.4 / 2013-07-13
+==================
+
+  * add virtual and path getter support
+  * add statics and methods
+
 0.0.3 / 2013-07-13
 ==================
 

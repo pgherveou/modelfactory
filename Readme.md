@@ -6,7 +6,8 @@
   - enable . notation to access model properties instead of get() set()
   - define basic Types (string, boolean, date, number)
   - virtuals
-  - path getter
+  - path getter (no setter for now)
+  - static / instance method
   - reuse validation logic and define default validators (min, max, required, enum, match)
 
   ```js
