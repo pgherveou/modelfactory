@@ -1,10 +1,11 @@
 var climongoose = require('climongoose')
 , chai = require('chai')
 , expect = chai.expect
-, model = climongoose.model(Backbone);
+, model = climongoose.model(Backbone)
+, Schema = climongoose.Schema;
 
 
-var User = model('User', {
+var schema = new Schema({
   email: {
     type: String,
     required: true,
@@ -16,12 +17,18 @@ var User = model('User', {
     enum: ['male', 'female', 'unkown']
   },
 
+  creditcard: {
+    type: String
+  },
+
   age: {
     type: Number,
     min: 7,
     max: 77
   },
+
   date: {type: Date},
+
   name: {
     first: {
       type: String,
@@ -35,6 +42,17 @@ var User = model('User', {
   }
 });
 
+schema.path('creditcard').get(function(v) {
+  return v.slice(0, 3) + "**********";
+});
+
+
+schema.virtual('name.full').get(function() {
+  return this.name.first + ' ' + this.name.last;
+});
+
+var User = model('User', schema);
+
 
 var user = null;
 
@@ -47,6 +65,7 @@ describe('climongoose specs', function() {
       email: 'john@gmail.com',
       name: {first: 'john', last: 'mcenroe'},
       age: 44,
+      creditcard: "123-456-789",
       sex: 'male',
       date: new Date()
     });
@@ -67,6 +86,10 @@ describe('climongoose specs', function() {
 
   it('should get nested property', function() {
     expect(user.name.first).to.eq('john');
+  });
+
+  it('should use path getter', function() {
+    expect(user.creditcard).to.eq('123**********');
   });
 
   it('should set property', function(done) {
@@ -91,6 +114,10 @@ describe('climongoose specs', function() {
     user.name.first = newFirstname;
     expect(user.name.first).to.eq(newFirstname);
     expect(user.toJSON().name.first).to.eq(newFirstname);
+  });
+
+  it('should have virtual method', function() {
+    expect(user.name.full).to.eq('john mcenroe');
   });
 
   it('should validate model', function() {
