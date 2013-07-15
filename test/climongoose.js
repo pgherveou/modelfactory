@@ -48,7 +48,7 @@ var schema = new Schema({
 });
 
 schema.path('creditcard').get(function(v) {
-  return v.slice(0, 3) + "**********";
+  return v.slice(0, 3) + '**********';
 });
 
 
@@ -78,7 +78,7 @@ describe('climongoose specs', function() {
       email: 'john@gmail.com',
       name: {first: 'john', last: 'mcenroe'},
       age: 44,
-      creditcard: "123-456-789",
+      creditcard: '123-456-789',
       sex: 'male',
       projects: ['project1', 'project2'],
       keywords: ['foo', 'bar'],
@@ -123,9 +123,12 @@ describe('climongoose specs', function() {
     expect(user.keywords).to.deep.equal(['foo', 'bar']);
   });
 
-
   it('should use path getter', function() {
     expect(user.creditcard).to.eq('123**********');
+  });
+
+  it('should get raw value', function() {
+    expect(user.getValue('creditcard')).to.eq('123-456-789');
   });
 
   it('should set property', function(done) {
