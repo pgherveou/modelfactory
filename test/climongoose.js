@@ -44,6 +44,7 @@ var schema = new Schema({
       required: true
     }
   }
+
 });
 
 schema.path('creditcard').get(function(v) {
@@ -151,6 +152,18 @@ describe('climongoose specs', function() {
     expect(user.toJSON().name.first).to.eq(newFirstname);
   });
 
+  it('should set nested object', function(done) {
+    var name = {first: 'johny', last: 'cash'};
+    user.on('change:name', function(u, name) {
+      expect(u).to.eq(user);
+      expect(name).to.deep.eq(name);
+      done();
+    });
+    user.name = name;
+    expect(user.name.first).to.eq(name.first);
+    expect(user.name.last).to.eq(name.last);
+  });
+
   it('should have virtual method', function() {
     expect(user.name.full).to.eq('john mcenroe');
   });
@@ -224,5 +237,18 @@ describe('climongoose specs', function() {
   });
 
 
+  it('should use custom validator', function() {
+    var called = false;
+    var validator = function (value) {
+      called = true;
+      expect(this).to.eq(user);
+      expect(value).to.eq('123-456-789');
+      return true;
+    };
+
+    schema.path('creditcard').validators.push([validator, 'cc-validator']);
+    var errs = user.validate({validate: true});
+    expect(called).to.be.ok;
+  });
 });
 
