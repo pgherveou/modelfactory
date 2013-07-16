@@ -16,7 +16,7 @@ http.createServer(app).listen(app.get('port'), function(){
   cloud.browser('internet explorer', '7', 'Windows 2003');
 	cloud.browser('iphone', '5.0', 'Mac 10.6');
 	cloud.browser('ipad', '6', 'Mac 10.8');
-	cloud.url('http://localhost:'+ app.get('port') +'/test/');
+	cloud.url('http://localhost:'+ app.get('port') +'/test/cloud.html');
 
 
 	cloud.on('init', function(browser){
