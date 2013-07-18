@@ -47,6 +47,10 @@ var schema = new Schema({
 
 });
 
+schema.path('name.last').set(function(v) {
+  return v[0].toUpperCase() + v.slice(1);
+});
+
 schema.path('creditcard').get(function(v) {
   return v.slice(0, 3) + '**********';
 });
@@ -63,6 +67,12 @@ schema.static('version', function() {
 
 schema.virtual('name.full').get(function() {
   return this.name.first + ' ' + this.name.last;
+});
+
+schema.virtual('name.full').set(function(v) {
+  var split = v.split(' ');
+  this.name.first = split.shift();
+  this.name.last = split.join(' ');
 });
 
 var User = model('User', schema);
@@ -143,6 +153,11 @@ describe('climongoose specs', function() {
     expect(user.toJSON().email).to.eq(newMail);
   });
 
+  it('should set property with setter', function() {
+    user.name.last = "cash";
+    expect(user.name.last).to.eq("Cash");
+  });
+
   it('should set nested property', function(done) {
     var newFirstname = 'johny';
     user.on('change:name.first', function(u, firstname) {
@@ -167,8 +182,14 @@ describe('climongoose specs', function() {
     expect(user.name.last).to.eq(name.last);
   });
 
-  it('should have virtual method', function() {
+  it('should use virtual method getter', function() {
     expect(user.name.full).to.eq('john mcenroe');
+  });
+
+  it('should use virtual method setter', function() {
+    user.name.full = "johny cash";
+    expect(user.name.first).to.eq('johny');
+    expect(user.name.last).to.eq('Cash');
   });
 
   it('should validate model', function() {
@@ -238,7 +259,6 @@ describe('climongoose specs', function() {
     expect(errs).to.have.length(1);
     expect(errs).to.have.deep.property('[0].path', 'email');
   });
-
 
   it('should use custom validator', function() {
     var called = false;
