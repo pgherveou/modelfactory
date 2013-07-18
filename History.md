@@ -1,4 +1,10 @@
 
+0.0.15 / 2013-07-18
+==================
+
+  * use setter when use with key and value
+  * add testing node package config
+
 0.0.14 / 2013-07-14
 ==================
 
