@@ -197,7 +197,7 @@ describe('climongoose specs', function() {
 
   it('should validate model', function() {
     var errs = user.validate({validate: true});
-    expect(errs).to.be.ko;
+    expect(errs).to.not.be.ok;
   });
 
   it('should reject missing required field', function() {
