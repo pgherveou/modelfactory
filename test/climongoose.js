@@ -2,7 +2,8 @@ var climongoose = require('climongoose')
 , chai = require('chai')
 , expect = chai.expect
 , model = climongoose.model(Backbone.Model)
-, Schema = climongoose.Schema;
+, Schema = climongoose.Schema
+, ObjectId = Schema.Types.ObjectId;
 
 
 var schema = new Schema({
@@ -28,6 +29,8 @@ var schema = new Schema({
   },
 
   date: {type: Date},
+
+  someRef: {type: ObjectId},
 
   projects: [String],
 

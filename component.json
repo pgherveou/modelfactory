@@ -2,7 +2,7 @@
   "name": "climongoose",
   "repo": "pgherveou/climongoose",
   "description": "reuse mongoose schema definition in your frontend code",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "dependencies": {},
   "development": {
     "chaijs/chai": "*",
@@ -24,6 +24,7 @@
     "lib/schema/boolean.js",
     "lib/schema/number.js",
     "lib/schema/string.js",
+    "lib/schema/objectid.js",
     "lib/schema/documentarray.js"
   ]
 }
