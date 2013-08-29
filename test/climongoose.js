@@ -46,6 +46,14 @@ var schema = new Schema({
       type: String,
       required: true
     }
+  },
+
+  one: {
+    two: {
+      tree: {
+        type: Boolean
+      }
+    }
   }
 
 });
@@ -95,7 +103,8 @@ describe('climongoose specs', function() {
       sex: 'male',
       projects: ['project1', 'project2'],
       keywords: ['foo', 'bar'],
-      date: new Date()
+      date: new Date(),
+      one: {two: {tree: true}}
     });
   });
 
@@ -276,5 +285,10 @@ describe('climongoose specs', function() {
     var errs = user.validate({validate: true});
     expect(called).to.be.ok;
   });
+
+  it('should get deeply nested value', function() {
+    expect(user.one.two.tree).to.be.ok;
+  });
+
 });
 

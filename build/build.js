@@ -4413,7 +4413,12 @@ function define(prop, subprops, prototype, prefix, keys) {\n\
 \n\
         if (!this.$__getters[path]) {\n\
           var nested = {};\n\
-          if (!prefix) nested.$__scope = this;\n\
+\n\
+          if (!prefix)\n\
+            nested.$__scope = this;\n\
+          else\n\
+            nested.$__scope = this.$__scope;\n\
+\n\
           compile(subprops, nested, path);\n\
           this.$__getters[path] = nested;\n\
         }\n\
@@ -4429,7 +4434,9 @@ function define(prop, subprops, prototype, prefix, keys) {\n\
       enumerable: true,\n\
 \n\
       get: function() {\n\
-        return (this.$__scope || this).get(path);\n\
+        if (this.$__scope) return this.$__scope.get(path);\n\
+        if (this.get) return this.get(path);\n\
+        return this[path];\n\
       },\n\
 \n\
       set: function(v) {\n\
