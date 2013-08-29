@@ -1,6 +1,6 @@
 {
   "name": "climongoose",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "devDependencies": {
     "express": "3.x",
     "mocha-cloud": "*"
