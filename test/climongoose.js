@@ -1,10 +1,11 @@
-var climongoose = require('climongoose')
-, chai = require('chai')
-, expect = chai.expect
-, model = climongoose.model(Backbone.Model)
-, Schema = climongoose.Schema
-, ObjectId = Schema.Types.ObjectId;
+/*global describe:true,beforeEach:true,afterEach:true,Backbone:true,it:true*/
 
+var climongoose = require('climongoose'),
+    chai = require('chai'),
+    expect = chai.expect,
+    model = climongoose.model(Backbone.Model),
+    Schema = climongoose.Schema,
+    ObjectId = Schema.Types.ObjectId;
 
 var schema = new Schema({
   email: {
@@ -66,11 +67,9 @@ schema.path('creditcard').get(function(v) {
   return v.slice(0, 3) + '**********';
 });
 
-
 schema.method('hello', function() {
   return 'hello ' + this.name.first;
 });
-
 
 schema.static('version', function() {
   return '0.1';
@@ -166,8 +165,8 @@ describe('climongoose specs', function() {
   });
 
   it('should set property with setter', function() {
-    user.name.last = "cash";
-    expect(user.name.last).to.eq("Cash");
+    user.name.last = 'cash';
+    expect(user.name.last).to.eq('Cash');
   });
 
   it('should set nested property', function(done) {
@@ -199,7 +198,7 @@ describe('climongoose specs', function() {
   });
 
   it('should use virtual method setter', function() {
-    user.name.full = "johny cash";
+    user.name.full = 'johny cash';
     expect(user.name.first).to.eq('johny');
     expect(user.name.last).to.eq('Cash');
   });
@@ -282,7 +281,7 @@ describe('climongoose specs', function() {
     };
 
     schema.path('creditcard').validators.push([validator, 'cc-validator']);
-    var errs = user.validate({validate: true});
+    user.validate({validate: true});
     expect(called).to.be.ok;
   });
 
@@ -290,5 +289,9 @@ describe('climongoose specs', function() {
     expect(user.one.two.tree).to.be.ok;
   });
 
-});
+  it('should set deeply nested value', function() {
+    user.one.two.tree = false;
+    expect(user.one.two.tree).to.eq(false);
+  });
 
+});

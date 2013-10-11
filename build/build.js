@@ -26,10 +26,14 @@ function require(path, parent, orig) {
   // perform real require()
   // by invoking the module's
   // registered function
-  if (!module.exports) {
-    module.exports = {};
-    module.client = module.component = true;
-    module.call(this, module.exports, require.relative(resolved), module);
+  if (!module._resolving && !module.exports) {
+    var mod = {};
+    mod.exports = {};
+    mod.client = mod.component = true;
+    module._resolving = true;
+    module.call(this, mod.exports, require.relative(resolved), mod);
+    delete module._resolving;
+    module.exports = mod.exports;
   }
 
   return module.exports;
@@ -4361,11 +4365,11 @@ require.register("climongoose/lib/index.js", Function("exports, require, module"
  * deps\n\
  */\n\
 \n\
-var Schema = require('./schema')\n\
-  , Errors = require('./errors')\n\
-  , utils = require('./utils')\n\
-  , getPath = utils.getPath\n\
-  , setPath = utils.setPath;\n\
+var Schema = require('./schema'),\n\
+    Errors = require('./errors'),\n\
+    utils = require('./utils'),\n\
+    getPath = utils.getPath,\n\
+    setPath = utils.setPath;\n\
 \n\
 /**\n\
  * exports stuffs\n\
@@ -4374,83 +4378,85 @@ var Schema = require('./schema')\n\
 module.exports.Schema = Schema;\n\
 module.exports.Error = Errors;\n\
 \n\
+var define, compile;\n\
+\n\
 /**\n\
  * compile schema\n\
  */\n\
 \n\
-function compile(tree, proto, prefix) {\n\
+compile = function compile(tree, proto, prefix) {\n\
   var keys = Object.keys(tree);\n\
-  keys.forEach(function(key) {\n\
+  keys.forEach(function (key) {\n\
     var limb = tree[key];\n\
 \n\
-    define(key\n\
-        , (('Object' === limb.constructor.name\n\
+    define(key,\n\
+           (('Object' === limb.constructor.name\n\
                && Object.keys(limb).length)\n\
                && (!limb.type || limb.type.type)\n\
                ? limb\n\
-               : null)\n\
-        , proto\n\
-        , prefix\n\
-        , keys);\n\
+               : null),\n\
+           proto,\n\
+           prefix,\n\
+           keys);\n\
 \n\
   });\n\
-}\n\
+};\n\
 \n\
 /**\n\
  * define accessors on the incoming prototype\n\
  */\n\
 \n\
-function define(prop, subprops, prototype, prefix, keys) {\n\
-  prefix || (prefix = \"\");\n\
-  var path = (prefix ? prefix + \".\" : \"\") + prop;\n\
+define = function define(prop, subprops, prototype, prefix) {\n\
+  prefix || (prefix = '');\n\
+  var path = (prefix ? prefix + '.' : '') + prop;\n\
 \n\
   if (subprops) {\n\
     return Object.defineProperty(prototype, prop, {\n\
       enumerable: true,\n\
 \n\
-      get: function() {\n\
-        if (!this.$__getters) this.$__getters = {};\n\
+      get: function () {\n\
+        if (!this.__getters) this.__getters = {};\n\
 \n\
-        if (!this.$__getters[path]) {\n\
+        if (!this.__getters[path]) {\n\
           var nested = {};\n\
 \n\
           if (!prefix)\n\
-            nested.$__scope = this;\n\
+            nested.__scope = this;\n\
           else\n\
-            nested.$__scope = this.$__scope;\n\
+            nested.__scope = this.__scope;\n\
 \n\
           compile(subprops, nested, path);\n\
-          this.$__getters[path] = nested;\n\
+          this.__getters[path] = nested;\n\
         }\n\
-        return this.$__getters[path];\n\
+        return this.__getters[path];\n\
       },\n\
 \n\
-      set: function(v) {\n\
-        (this.$__scope || this).set(path, v);\n\
+      set: function (v) {\n\
+        (this.__scope || this).set(path, v);\n\
       }\n\
     });\n\
   } else {\n\
     Object.defineProperty(prototype, prop, {\n\
       enumerable: true,\n\
 \n\
-      get: function() {\n\
-        if (this.$__scope) return this.$__scope.get(path);\n\
+      get: function () {\n\
+        if (this.__scope) return this.__scope.get(path);\n\
         if (this.get) return this.get(path);\n\
         return this[path];\n\
       },\n\
 \n\
-      set: function(v) {\n\
-        (this.$__scope || this).set(path, v);\n\
+      set: function (v) {\n\
+        (this.__scope || this).set(path, v);\n\
       }\n\
     });\n\
   }\n\
-}\n\
+};\n\
 \n\
 /**\n\
  * exports model factory\n\
  */\n\
 \n\
-module.exports.model = function(BBModel) {\n\
+module.exports.model = function (BBModel) {\n\
 \n\
   var BaseModel = BBModel.extend({\n\
 \n\
@@ -4460,14 +4466,14 @@ module.exports.model = function(BBModel) {\n\
      */\n\
 \n\
     get: function (path) {\n\
-      var schema = this.schema.path(path) || this.schema.virtualpath(path)\n\
-        , obj = getPath(this.attributes, path);\n\
+      var schema = this.schema.path(path) || this.schema.virtualpath(path),\n\
+          obj = getPath(this.attributes, path);\n\
 \n\
       if (schema) return schema.applyGetters(obj, this);\n\
       return obj;\n\
     },\n\
 \n\
-    getValue: function(path) {\n\
+    getValue: function (path) {\n\
       return getPath(this.attributes, path);\n\
     },\n\
 \n\
@@ -4480,22 +4486,22 @@ module.exports.model = function(BBModel) {\n\
      * @param  {[Object]}       options\n\
      */\n\
 \n\
-    set: function(key, val, options) {\n\
+    set: function (key, val) {\n\
       if ('object' === typeof key || key.indexOf('.') === -1) {\n\
         BBModel.prototype.set.apply(this, arguments);\n\
       } else {\n\
 \n\
-       var schema = this.schema.path(key) || this.schema.virtualpath(key)\n\
-          , prev = getPath(this.attributes, key);\n\
+        var schema = this.schema.path(key) || this.schema.virtualpath(key),\n\
+            prev = getPath(this.attributes, key);\n\
 \n\
         if (prev === val) return this;\n\
         if (schema) val = schema.applySetters(val, this);\n\
         if (schema && schema.instance === 'virtual') {\n\
-          this.trigger(\"change:\" + key, this, val);\n\
+          this.trigger('change:' + key, this, val);\n\
         } else {\n\
           setPath(this.attributes, key, val);\n\
-          this.trigger(\"change:\" + key, this, val);\n\
-          this.trigger(\"change\", this);\n\
+          this.trigger('change:' + key, this, val);\n\
+          this.trigger('change', this);\n\
         }\n\
       }\n\
       return this;\n\
@@ -4509,7 +4515,7 @@ module.exports.model = function(BBModel) {\n\
      * @return {Array}  error array if any\n\
      */\n\
 \n\
-    validate: function(attrs, opts) {\n\
+    validate: function (attrs, opts) {\n\
       if (!arguments.length) return;\n\
 \n\
       if (!opts) {\n\
@@ -4519,9 +4525,9 @@ module.exports.model = function(BBModel) {\n\
 \n\
       if (!opts.validate) return;\n\
 \n\
-      var errors = []\n\
-        , _this = this\n\
-        , paths;\n\
+      var errors = [],\n\
+          _this = this,\n\
+          paths;\n\
 \n\
       if (opts.paths) {\n\
         paths = opts.paths;\n\
@@ -4530,10 +4536,10 @@ module.exports.model = function(BBModel) {\n\
         paths = Object.keys(this.schema.paths);\n\
       }\n\
 \n\
-      paths.forEach(function(path) {\n\
-        var p = _this.schema.path(path)\n\
-          , val = getPath(attrs, path)\n\
-          , err = p.doValidate(val, _this);\n\
+      paths.forEach(function (path) {\n\
+        var p = _this.schema.path(path),\n\
+            val = getPath(attrs, path),\n\
+            err = p.doValidate(val, _this);\n\
         if (err) errors.push.apply(errors, err);\n\
       });\n\
 \n\
@@ -4549,29 +4555,21 @@ module.exports.model = function(BBModel) {\n\
    * @api private\n\
    */\n\
 \n\
-  var createNamedConstructor = function(name, constructor) {\n\
-    name = name.replace(/[^a-z]/ig, '');\n\
-    name = name[0].toUpperCase() + name.slice(1);\n\
-    var fn = new Function('constructor',\n\
-      \"return function \" + name + \"() {constructor.apply(this, arguments);};\"\n\
-    );\n\
-    return fn(constructor);\n\
-  };\n\
-\n\
   /**\n\
    * model factory\n\
    * @param  {String} name\n\
    * @param  {Scheme} schema\n\
    */\n\
 \n\
-  return function(name, schema) {\n\
+  return function (name, schema) {\n\
+\n\
+    window.leak = 'foo';\n\
 \n\
     if (!(schema instanceof Schema)) {\n\
       schema = new Schema(schema);\n\
     }\n\
 \n\
     var Model = BaseModel.extend({\n\
-      constructor: createNamedConstructor(name, BBModel),\n\
       schema: schema\n\
     });\n\
 \n\
@@ -4583,7 +4581,7 @@ module.exports.model = function(BBModel) {\n\
       Model.prototype[i] = schema.methods[i];\n\
 \n\
     // apply statics\n\
-    for (var i in schema.statics)\n\
+    for (i in schema.statics)\n\
       Model[i] = schema.statics[i];\n\
 \n\
 \n\

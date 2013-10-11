@@ -3,7 +3,13 @@
   "version": "0.0.18",
   "devDependencies": {
     "express": "3.x",
-    "mocha-cloud": "*"
+    "mocha-cloud": "*",
+    "grunt-contrib-jshint": "0.x",
+    "grunt-contrib-clean": "0.x",
+    "grunt": "0.x",
+    "grunt-mocha": "~0.4.1"
+  },
+  "peerDependencies": {
+    "grunt": "~0.4.1"
   }
-
 }
