@@ -6,17 +6,12 @@
   </head>
   <body>
     <div id="mocha"></div>
-
-    <script src="js/underscore-min.js"></script>
-    <script src="js/backbone-min.js"></script>
-
     <script src="../build/build.js"></script>
     <script src="mocha/mocha.js"></script>
     <script>mocha.setup('bdd')</script>
     <script src="climongoose.js"></script>
     <script>
       mocha.checkLeaks();
-      mocha.globals(['Backbone', '_']);
       if (navigator.userAgent.indexOf('PhantomJS') < 0) mocha.run();
     </script>
   </body>

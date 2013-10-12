@@ -3,7 +3,9 @@
   "repo": "pgherveou/climongoose",
   "description": "reuse mongoose schema definition in your frontend code",
   "version": "0.0.18",
-  "dependencies": {},
+  "dependencies": {
+    "component/emitter": "*"
+  },
   "development": {
     "chaijs/chai": "*",
     "visionmedia/mocha-cloud": "*"
@@ -12,6 +14,7 @@
   "main": "lib/index.js",
   "scripts": [
     "lib/index.js",
+    "lib/model.js",
     "lib/utils.js",
     "lib/schema.js",
     "lib/type.js",
@@ -26,5 +29,6 @@
     "lib/schema/string.js",
     "lib/schema/objectid.js",
     "lib/schema/documentarray.js"
-  ]
+  ],
+  "remotes": []
 }

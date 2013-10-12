@@ -1,9 +1,9 @@
-/*global describe:true,beforeEach:true,afterEach:true,Backbone:true,it:true*/
+/*global describe:true,beforeEach:true,afterEach:true,it:true*/
 
 var climongoose = require('climongoose'),
     chai = require('chai'),
     expect = chai.expect,
-    model = climongoose.model(Backbone.Model),
+    model = climongoose.model,
     Schema = climongoose.Schema,
     ObjectId = Schema.Types.ObjectId;
 
@@ -117,9 +117,9 @@ describe('climongoose specs', function() {
     expect(climongoose.Error).to.be.ok;
   });
 
-  it('should be a backbone model', function() {
-    expect(user).to.be.an.instanceof(Backbone.Model);
-  });
+  // it('should be a backbone model', function() {
+  //   expect(user).to.be.an.instanceof(Backbone.Model);
+  // });
 
   it('should have defined instance methods', function() {
     expect(user).to.respondTo('hello');
@@ -204,14 +204,14 @@ describe('climongoose specs', function() {
   });
 
   it('should validate model', function() {
-    var errs = user.validate({validate: true});
+    var errs = user.validate();
     expect(errs).to.not.be.ok;
   });
 
   it('should reject missing required field', function() {
     user.email = '';
     user.name.first = '';
-    var errs = user.validate({validate: true});
+    var errs = user.validate();
     expect(errs).to.be.ok;
     expect(errs).to.have.length(2);
     expect(errs).to.have.deep.property('[0].type', 'required');
@@ -219,7 +219,7 @@ describe('climongoose specs', function() {
 
   it('should reject not matching string', function() {
     user.email = 'john[at]gmail.com';
-    var errs = user.validate({validate: true});
+    var errs = user.validate();
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
     expect(errs).to.have.deep.property('[0].path', 'email');
@@ -228,7 +228,7 @@ describe('climongoose specs', function() {
 
   it('should reject unkown enum value', function() {
     user.sex = 'hombre';
-    var errs = user.validate({validate: true});
+    var errs = user.validate();
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
     expect(errs).to.have.deep.property('[0].path', 'sex');
@@ -237,7 +237,7 @@ describe('climongoose specs', function() {
 
   it('should reject number below min', function() {
     user.age = 5;
-    var errs = user.validate({validate: true});
+    var errs = user.validate();
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
     expect(errs).to.have.deep.property('[0].path', 'age');
@@ -246,7 +246,7 @@ describe('climongoose specs', function() {
 
   it('should reject number above max', function() {
     user.age = 205;
-    var errs = user.validate({validate: true});
+    var errs = user.validate();
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
     expect(errs).to.have.deep.property('[0].path', 'age');
@@ -281,7 +281,7 @@ describe('climongoose specs', function() {
     };
 
     schema.path('creditcard').validators.push([validator, 'cc-validator']);
-    user.validate({validate: true});
+    user.validate();
     expect(called).to.be.ok;
   });
 
