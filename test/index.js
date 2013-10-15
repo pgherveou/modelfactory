@@ -1,4 +1,4 @@
-/*global describe:true,beforeEach:true,afterEach:true,it:true*/
+/*global describe:true,beforeEach:true,afterEach:true,it:true,xit:true*/
 
 var climongoose = require('climongoose'),
     chai = require('chai'),
@@ -7,57 +7,83 @@ var climongoose = require('climongoose'),
     Schema = climongoose.Schema,
     ObjectId = Schema.Types.ObjectId;
 
+
+/**
+ * Sample Project Class
+ */
+
+function Project(obj) {
+  this.id = obj._id;
+  this.name = obj.name;
+  this.category = obj.category;
+}
+
+Project.prototype.toString = function () {
+  return this.name + ' - ' + this.category;
+};
+
+/**
+ * Sample User Schema
+ */
+
 var schema = new Schema({
-  email: {
-    type: String,
-    required: true,
-    match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
-  },
-
-  sex: {
-    type: String,
-    enum: ['unkown', 'female', 'male']
-  },
-
-  creditcard: {
-    type: String
-  },
-
-  age: {
-    type: Number,
-    min: 7,
-    max: 77
-  },
-
-  date: {type: Date},
-
-  someRef: {type: ObjectId},
-
-  projects: [String],
-
-  keywords: {type: [String], required: true},
-
-  name: {
-    first: {
+    email: {
       type: String,
+      required: true,
+      match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
+    },
+
+    sex: {
+      type: String,
+      enum: ['unkown', 'female', 'male']
+    },
+
+    creditcard: {
+      type: String
+    },
+
+    age: {
+      type: Number,
+      min: 7,
+      max: 77
+    },
+
+    date: {
+      type: Date
+    },
+
+    someRef: {
+      type: ObjectId
+    },
+
+    projects: [Project],
+
+    keywords: {
+      type: [String],
       required: true
     },
 
-    last: {
-      type: String,
-      required: true
-    }
-  },
+    name: {
+      first: {
+        type: String,
+        required: true
+      },
 
-  one: {
-    two: {
-      tree: {
-        type: Boolean
+      last: {
+        type: String,
+        required: true
+      }
+    },
+
+    one: {
+      two: {
+        tree: {
+          type: Boolean
+        }
       }
     }
-  }
+  });
 
-});
 
 schema.path('name.last').set(function(v) {
   return v[0].toUpperCase() + v.slice(1);
@@ -85,22 +111,24 @@ schema.virtual('name.full').set(function(v) {
   this.name.last = split.join(' ');
 });
 
-var User = model('User', schema);
 
-var user = null;
+var User = model('User', schema),
+    user,
+    emit;
 
 describe('climongoose specs', function() {
-
-  this.timeout(500);
-
   beforeEach(function() {
+    emit = 0;
     user = new User({
       email: 'john@gmail.com',
       name: {first: 'john', last: 'mcenroe'},
       age: 44,
       creditcard: '123-456-789',
       sex: 'male',
-      projects: ['project1', 'project2'],
+      projects: [
+        {name: 'project1', category: 'marketing'},
+        {name: 'project2', category: 'finance'}
+      ],
       keywords: ['foo', 'bar'],
       date: new Date(),
       one: {two: {tree: true}}
@@ -117,16 +145,12 @@ describe('climongoose specs', function() {
     expect(climongoose.Error).to.be.ok;
   });
 
-  // it('should be a backbone model', function() {
-  //   expect(user).to.be.an.instanceof(Backbone.Model);
-  // });
-
-  it('should have defined instance methods', function() {
+  it('should have instance methods', function() {
     expect(user).to.respondTo('hello');
     expect(user.hello()).to.eq('hello john');
   });
 
-  it('should have defined statics method', function() {
+  it('should have statics method', function() {
     expect(User).itself.to.respondTo('version');
     expect(User.version()).to.eq('0.1');
   });
@@ -140,7 +164,6 @@ describe('climongoose specs', function() {
   });
 
   it('should get an array property', function() {
-    expect(user.projects).to.deep.equal(['project1', 'project2']);
     expect(user.keywords).to.deep.equal(['foo', 'bar']);
   });
 
@@ -152,14 +175,15 @@ describe('climongoose specs', function() {
     expect(user.getValue('creditcard')).to.eq('123-456-789');
   });
 
-  it('should set property', function(done) {
+  it('should set property', function() {
     var newMail = 'john.mcenroe@gmail.com';
-    user.on('change:email', function(u, email) {
+    user.on('change:email', function(email, u) {
       expect(u).to.eq(user);
       expect(email).to.eq(newMail);
-      done();
+      emit++;
     });
     user.email = newMail;
+    expect(emit).to.eq(1);
     expect(user.email).to.eq(newMail);
     expect(user.toJSON().email).to.eq(newMail);
   });
@@ -169,28 +193,122 @@ describe('climongoose specs', function() {
     expect(user.name.last).to.eq('Cash');
   });
 
-  it('should set nested property', function(done) {
+  it('should set nested property', function() {
     var newFirstname = 'johny';
-    user.on('change:name.first', function(u, firstname) {
+
+    user.on('change:name.first', function(first, u) {
       expect(u).to.eq(user);
-      expect(firstname).to.eq(newFirstname);
-      done();
+      expect(first).to.eq(newFirstname);
+      emit++;
     });
+
+    user.on('change:name', function(name) {
+      expect(name).to.deep.eq({
+        first: newFirstname,
+        last: user.name.last
+      });
+      emit++;
+    });
+
+    user.on('change', function (u) {
+      expect(u).to.eq(user);
+      emit++;
+    });
+
     user.name.first = newFirstname;
+    expect(emit).to.eq(3);
     expect(user.name.first).to.eq(newFirstname);
     expect(user.toJSON().name.first).to.eq(newFirstname);
   });
 
-  it('should set nested object', function(done) {
-    var name = {first: 'johny', last: 'cash'};
-    user.on('change:name', function(u, name) {
+  it('should set nested object', function() {
+    var name = {
+      first: 'foo',
+      last: 'bar'
+    };
+
+    user.on('change:name', function(name, u) {
       expect(u).to.eq(user);
-      expect(name).to.deep.eq(name);
-      done();
+      expect({first: 'foo',last: 'Bar'}).to.deep.eq(name);
+      emit++;
     });
+
+    user.on('change:name.first', function(firstname) {
+      expect(firstname).to.deep.eq('foo');
+      emit++;
+    });
+
+    user.on('change:name.last', function(lastname) {
+      expect(lastname).to.deep.eq('Bar');
+      emit++;
+    });
+
     user.name = name;
-    expect(user.name.first).to.eq(name.first);
-    expect(user.name.last).to.eq(name.last);
+    expect(emit).to.eq(3);
+    expect(user.name.first).to.eq('foo');
+    expect(user.name.last).to.eq('Bar');
+  });
+
+  it('should set from object', function() {
+    var obj = {
+      name: {
+        first: 'foo',
+        last: 'bar'
+      },
+      creditcard: '999-456-789',
+      age: 24
+    }, emit = 0;
+
+    user.on('change:name', function(name) {
+      expect({first: 'foo',last: 'Bar'}).to.deep.eq(name);
+      emit++;
+    });
+
+    user.on('change:name.first', function(firstname) {
+      expect('foo').to.eq(firstname);
+      emit++;
+    });
+
+    user.on('change:name.last', function(lastname) {
+      expect('Bar').to.eq(lastname);
+      emit++;
+    });
+
+    // CHECK return getter instead...
+    user.on('change:creditcard', function(creditcard) {
+      expect('999**********').to.eq(creditcard);
+      emit++;
+    });
+
+    user.on('change:age', function(age) {
+      expect(24).to.deep.eq(age);
+      emit++;
+    });
+
+    user.set(obj);
+    expect(emit).to.eq(5);
+  });
+
+  it('should get deeply nested value', function() {
+    expect(user.one.two.tree).to.be.ok;
+  });
+
+  it('should set deeply nested value', function() {
+    user.on('change:one', function() {
+      emit++;
+    });
+
+    user.on('change:one.two', function() {
+      emit++;
+    });
+
+    user.on('change:one.two.tree', function() {
+      emit++;
+    });
+
+    user.one.two.tree = false;
+    expect(emit).to.eq(3);
+    expect(user.one.two.tree).to.eq(false);
   });
 
   it('should use virtual method getter', function() {
@@ -283,15 +401,6 @@ describe('climongoose specs', function() {
     schema.path('creditcard').validators.push([validator, 'cc-validator']);
     user.validate();
     expect(called).to.be.ok;
-  });
-
-  it('should get deeply nested value', function() {
-    expect(user.one.two.tree).to.be.ok;
-  });
-
-  it('should set deeply nested value', function() {
-    user.one.two.tree = false;
-    expect(user.one.two.tree).to.eq(false);
   });
 
 });

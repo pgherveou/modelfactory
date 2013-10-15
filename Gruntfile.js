@@ -8,7 +8,7 @@ module.exports = function(grunt) {
     jshint: {
       all: [
         'Gruntfile.js',
-        'lib/*.js',
+        'lib/**/*.js',
         'test/*.js'
       ],
       options: {
@@ -16,32 +16,58 @@ module.exports = function(grunt) {
       },
     },
 
-    // Before generating any new files, remove any previously-created files.
     clean: {
       tests: ['build'],
     },
 
-    mocha: {
-      all: {
-        src: [ 'test/index.html' ]
-      },
-      options: {
-        run: true,
-        bail: true,
-        reporter: 'Spec',
-        mocha: {
-          ignoreLeaks: false
-        },
+    connect: {
+      server: {
+        options: {
+          port: 3000,
+          base: '',
+          livereload: true,
+          open: 'http://localhost:3000/test'
+        }
       }
     },
 
+    shell: {
+      build: {
+        command: 'component build --dev',
+        options: {
+          stdout: true
+        }
+      }
+    },
+
+    watch: {
+      options: {
+        livereload: true,
+        spawn: false
+      },
+      js: {
+        files: ['lib/**/*.js', 'test/index.js'],
+        tasks: ['shell:build']
+      }
+    }
+
   });
 
-
-  // These plugins provide necessary tasks.
-  grunt.loadNpmTasks('grunt-mocha');
+  grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.registerTask('default', ['jshint']);
+  grunt.loadNpmTasks('grunt-contrib-connect');
+  grunt.loadNpmTasks('grunt-contrib-watch');
+
+  grunt.registerTask('default', [
+    'clean',
+    'shell:build'
+  ]);
+
+  grunt.registerTask('dev', [
+    'default',
+    'connect',
+    'watch'
+  ]);
 
 };

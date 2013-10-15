@@ -4666,17 +4666,18 @@ require.register("climongoose/lib/model.js", Function("exports, require, module"
     setPath = utils.setPath;\n\
 \n\
 /**\n\
- * constructor\n\
+ * Model constructor, inherit from Emitter\n\
  * @param {[type]} obj [description]\n\
  */\n\
 \n\
 function Model(obj) {\n\
   Object.defineProperty(this, '_doc', {\n\
-    value: obj || {}\n\
+    value: obj || {},\n\
   });\n\
+  this.emit('init', this, obj);\n\
 }\n\
 \n\
-/**\n\
+/*!\n\
  * Inherit from Emitter\n\
  */\n\
 \n\
@@ -4685,8 +4686,8 @@ Model.prototype.__proto__ = Emitter.prototype;\n\
 /**\n\
  * The documents schema.\n\
  *\n\
- * @api public\n\
  * @property schema\n\
+ * @api public\n\
  */\n\
 \n\
 Model.prototype.schema;\n\
@@ -4699,11 +4700,40 @@ Model.prototype.schema;\n\
 module.exports = Model;\n\
 \n\
 /**\n\
- * Get property\n\
+ * get model id using _id property\n\
+ *\n\
+ * @property id\n\
+ * @api public\n\
+ */\n\
+\n\
+Object.defineProperty(Model.prototype, 'id', {\n\
+  get: function () {\n\
+    return this._doc._id;\n\
+  }\n\
+});\n\
+\n\
+/**\n\
+ * Define if model is new or not\n\
+ *\n\
+ * @property isNew\n\
+ * @api public\n\
+ */\n\
+\n\
+Object.defineProperty(Model.prototype, 'isNew', {\n\
+  get: function () {\n\
+    return !!this.id;\n\
+  }\n\
+});\n\
+\n\
+/**\n\
+ * Get property using schema getters\n\
  * @param  {String} key\n\
+ * @return {Object} path value\n\
  */\n\
 \n\
 Model.prototype.get = function (path) {\n\
+  if (!path) return this;\n\
+\n\
   var schema = this.schema.path(path) || this.schema.virtualpath(path),\n\
       obj = getPath(this._doc, path);\n\
 \n\
@@ -4714,6 +4744,7 @@ Model.prototype.get = function (path) {\n\
 /**\n\
  * Get raw value\n\
  * @param  {String} key\n\
+ * @return {Object} path raw value\n\
  */\n\
 \n\
 Model.prototype.getValue = function (path) {\n\
@@ -4722,37 +4753,83 @@ Model.prototype.getValue = function (path) {\n\
 \n\
 /**\n\
  * set property\n\
- * only apply setter for key / value format...\n\
  *\n\
  * @param  {String|Object}  key\n\
  * @param  {Object}         val\n\
- * @param  {[Object]}       options\n\
  */\n\
 \n\
-Model.prototype.set = function (key, val) {\n\
-  if ('object' === typeof key || key.indexOf('.') === -1) {\n\
-    this._doc[key] = val;\n\
-    this.emit('change:' + key, this, val);\n\
-    this.emit('change', this);\n\
-  } else {\n\
-    var schema = this.schema.path(key) || this.schema.virtualpath(key),\n\
-        prev = getPath(this._doc, key);\n\
+Model.prototype.set = function (key, val, opts) {\n\
+  if (key == null) return this;\n\
+  var paths = [],\n\
+      silent = opts && opts.silent,\n\
+      changedPaths = [],\n\
+      schema, path, ev, parts;\n\
 \n\
-    if (prev === val) return this;\n\
-    if (schema) val = schema.applySetters(val, this);\n\
-    if (schema && schema.instance === 'virtual') {\n\
-      this.emit('change:' + key, this, val);\n\
-    } else {\n\
-      setPath(this._doc, key, val);\n\
-      this.emit('change:' + key, this, val);\n\
-      this.emit('change', this);\n\
+  // handle model.set(key, val)\n\
+  if ('string' === typeof key) {\n\
+    schema = this.schema.path(key) || this.schema.virtualpath(key);\n\
+    if ('object' === typeof val) {\n\
+      paths = this.schema.getKeyVals(val, key);\n\
+    } else if (schema) {\n\
+      paths.push({key: key, val: val});\n\
     }\n\
+\n\
+  // handle model.set(val)\n\
+  } else {\n\
+    paths = this.schema.getKeyVals(key);\n\
   }\n\
+\n\
+  paths.forEach(function (keyval) {\n\
+    var key = keyval.key,\n\
+        val = keyval.val,\n\
+        schema;\n\
+\n\
+    // return if value has not changed\n\
+    if (getPath(this._doc, key) === val) return;\n\
+\n\
+    // get path's schema\n\
+    schema = this.schema.path(key) || this.schema.virtualpath(key);\n\
+\n\
+    // apply setters\n\
+    val = schema.applySetters(val, this);\n\
+\n\
+    // apply value\n\
+    if (schema.instance !== 'virtual') setPath(this._doc, key, val);\n\
+\n\
+    // trigger events\n\
+    if (!silent) {\n\
+      this.emit('change:' + key, this.get(key), this);\n\
+      parts = key.split('.');\n\
+\n\
+      // prepare subpath events\n\
+      while(parts.length) {\n\
+        parts.pop();\n\
+        path = parts.join('.');\n\
+        ev = 'change';\n\
+        if (path) ev += ':' + path;\n\
+        if (!changedPaths[ev] && this.hasListeners(ev))\n\
+          changedPaths[ev] = this.get(path);\n\
+      }\n\
+    }\n\
+  }, this);\n\
+\n\
+  // emit subpath events\n\
+  if (!silent) {\n\
+    Object\n\
+      .keys(changedPaths)\n\
+      .forEach(function (ev) {\n\
+        this.emit(ev, changedPaths[ev], this);\n\
+      }, this);\n\
+  }\n\
+\n\
   return this;\n\
 };\n\
 \n\
 /**\n\
  * validate doc\n\
+ *\n\
+ * opts are:\n\
+ *   - path list of path to validate for this model default to all\n\
  *\n\
  * @param  {Object} doc to validate\n\
  * @param  {Object} opts\n\
@@ -4788,9 +4865,23 @@ Model.prototype.validate = function (doc, opts) {\n\
 \n\
 /**\n\
  * toJSON\n\
+ *\n\
+ * @return {Object} JSON representation of this model\n\
+ * @api public\n\
  */\n\
 \n\
 Model.prototype.toJSON = function () {\n\
+  return this._doc;\n\
+};\n\
+\n\
+/**\n\
+ * toJSON\n\
+ *\n\
+ * @return {Object} JSON representation of this model\n\
+ * @api public\n\
+ */\n\
+\n\
+Model.prototype.isNew = function () {\n\
   return this._doc;\n\
 };//@ sourceURL=climongoose/lib/model.js"
 ));
@@ -4801,10 +4892,31 @@ require.register("climongoose/lib/utils.js", Function("exports, require, module"
  * @param  {String} path\n\
  */\n\
 \n\
-module.exports.getPath = function(obj, path) {\n\
+module.exports.getPath = function getPath(obj, path) {\n\
   return path.split('.').reduce(function(prev, current){\n\
     if (prev) return prev[current];\n\
   }, obj);\n\
+};\n\
+\n\
+/**\n\
+ * check if obj has specified path\n\
+ *\n\
+ * @param  {Object}  obj\n\
+ * @param  {String}  path\n\
+ * @return {Boolean}\n\
+ */\n\
+\n\
+module.exports.hasPath = function hasPath(obj, path) {\n\
+  var paths = path.split('.'),\n\
+      ref = obj,\n\
+      i;\n\
+\n\
+  for (i = 0; i < paths.length; i++) {\n\
+    path = paths[i];\n\
+    if (!ref.hasOwnProperty(path)) return false;\n\
+    ref = ref[path];\n\
+  }\n\
+  return true;\n\
 };\n\
 \n\
 /**\n\
@@ -4815,7 +4927,7 @@ module.exports.getPath = function(obj, path) {\n\
  * @param  {Object} val\n\
  */\n\
 \n\
-module.exports.setPath = function(obj, path, val) {\n\
+module.exports.setPath = function setPath(obj, path, val) {\n\
   var subpaths = path.split('.'),\n\
       last = subpaths.pop();\n\
 \n\
@@ -4834,7 +4946,11 @@ require.register("climongoose/lib/schema.js", Function("exports, require, module
  */\n\
 \n\
 var Types = require('./schema/index'),\n\
-    VirtualType = require('./virtualType');\n\
+    VirtualType = require('./virtualType'),\n\
+    utils = require('./utils'),\n\
+    hasPath = utils.hasPath,\n\
+    getPath = utils.getPath;\n\
+\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -4941,7 +5057,7 @@ Schema.prototype.virtualpath = function (name) {\n\
 };\n\
 \n\
 /**\n\
- * Converts type arguments into Mongoose Types.\n\
+ * Converts type arguments into Types.\n\
  *\n\
  * @param {String} path\n\
  * @param {Object} obj constructor\n\
@@ -4984,6 +5100,39 @@ Schema.prototype.virtual = function (name) {\n\
     return mem[part];\n\
   }, this.tree);\n\
   return virtuals[name];\n\
+};\n\
+\n\
+/**\n\
+ * extract path/value from object\n\
+ *\n\
+ * @param  {Object} obj\n\
+ * @return {Object}\n\
+ *\n\
+ * @api public\n\
+ */\n\
+\n\
+Schema.prototype.getKeyVals = function (obj, prefix) {\n\
+  var ret = [],\n\
+      o;\n\
+\n\
+  if (prefix) {\n\
+    o = {};\n\
+    o[prefix] = obj;\n\
+  } else {\n\
+    o = obj;\n\
+  }\n\
+\n\
+  Object\n\
+    .keys(this.paths)\n\
+    .forEach(function (key) {\n\
+      if (hasPath(o, key)) {\n\
+        ret.push({\n\
+          key: key,\n\
+          val: getPath(o, key)\n\
+        });\n\
+      }\n\
+    });\n\
+  return ret;\n\
 };\n\
 \n\
 /**\n\
@@ -5233,7 +5382,8 @@ VirtualType.prototype.__proto__ = Type.prototype;\n\
 //@ sourceURL=climongoose/lib/virtualType.js"
 ));
 require.register("climongoose/lib/errors/index.js", Function("exports, require, module",
-"module.exports.ValidatorError = require('./validator');//@ sourceURL=climongoose/lib/errors/index.js"
+"module.exports.ValidatorError = require('./validator');\n\
+module.exports.CastError = require('./cast');//@ sourceURL=climongoose/lib/errors/index.js"
 ));
 require.register("climongoose/lib/errors/validator.js", Function("exports, require, module",
 "/**\n\
@@ -5270,6 +5420,41 @@ ValidatorError.prototype.__proto__ = Error.prototype;\n\
 module.exports = ValidatorError;\n\
 //@ sourceURL=climongoose/lib/errors/validator.js"
 ));
+require.register("climongoose/lib/errors/cast.js", Function("exports, require, module",
+"/**\n\
+ * Cast error\n\
+ *\n\
+ * @param {String} path\n\
+ * @param {String} type\n\
+ * @param {Object} val\n\
+ */\n\
+\n\
+function CastError(path, type, val) {\n\
+  var msg;\n\
+  msg = type ? '\"' + type + '\"' : '';\n\
+  this.message = 'Cast ' + msg + ' failed for path ' + path;\n\
+  if (2 < arguments.length) this.message += ' with value ' + (String(val));\n\
+\n\
+  Error.call(this);\n\
+  this.name = 'CastError';\n\
+  this.path = path;\n\
+  this.type = type;\n\
+  this.value = val;\n\
+}\n\
+\n\
+/**\n\
+ * extend Error\n\
+ */\n\
+\n\
+CastError.prototype.__proto__ = Error.prototype;\n\
+\n\
+/**\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = CastError;\n\
+//@ sourceURL=climongoose/lib/errors/cast.js"
+));
 require.register("climongoose/lib/schema/index.js", Function("exports, require, module",
 "/**\n\
  * module exports\n\
@@ -5289,7 +5474,9 @@ require.register("climongoose/lib/schema/date.js", Function("exports, require, m
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
+var SchemaType = require('../schemaType'),\n\
+    Errors = require('../errors'),\n\
+    CastError = Errors.CastError;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -5309,6 +5496,35 @@ function DateType(key, options) {\n\
 DateType.prototype.__proto__ = SchemaType.prototype;\n\
 \n\
 /**\n\
+ * Casts to date\n\
+ *\n\
+ * @param {Object} value to cast\n\
+ * @api private\n\
+ */\n\
+\n\
+DateType.prototype.cast = function (value) {\n\
+  if (value === null || value === '') return null;\n\
+  if (value instanceof Date) return value;\n\
+\n\
+  var date;\n\
+\n\
+  // support for timestamps\n\
+  if (value instanceof Number\n\
+      || 'number' === typeof value\n\
+      || String(value) === Number(value)) {\n\
+    date = new Date(Number(value));\n\
+  }\n\
+\n\
+  // support for date strings\n\
+  else if (value.toString) {\n\
+    date = new Date(value.toString());\n\
+  }\n\
+\n\
+  if (date.toString() !== 'Invalid Date') return date;\n\
+  throw new CastError('date', value, this.path);\n\
+};\n\
+\n\
+/**\n\
  * module exports\n\
  */\n\
 \n\
@@ -5316,7 +5532,7 @@ module.exports = DateType;\n\
 //@ sourceURL=climongoose/lib/schema/date.js"
 ));
 require.register("climongoose/lib/schema/boolean.js", Function("exports, require, module",
-"/**\n\
+"/*!\n\
  * module dependencies\n\
  */\n\
 \n\
@@ -5340,6 +5556,21 @@ function BooleanType(key, options) {\n\
 BooleanType.prototype.__proto__ = SchemaType.prototype;\n\
 \n\
 /**\n\
+ * Casts to boolean\n\
+ *\n\
+ * @param {Object} value\n\
+ * @api private\n\
+ */\n\
+\n\
+BooleanType.prototype.cast = function (value) {\n\
+  if (null === value) return value;\n\
+  if ('0' === value) return false;\n\
+  if ('true' === value) return true;\n\
+  if ('false' === value) return false;\n\
+  return !! value;\n\
+};\n\
+\n\
+/**\n\
  * module exports\n\
  */\n\
 \n\
@@ -5347,11 +5578,13 @@ module.exports = BooleanType;\n\
 //@ sourceURL=climongoose/lib/schema/boolean.js"
 ));
 require.register("climongoose/lib/schema/number.js", Function("exports, require, module",
-"/**\n\
+"/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
+var SchemaType = require('../schemaType'),\n\
+    Errors = require('../errors'),\n\
+    CastError = Errors.CastError;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -5400,6 +5633,25 @@ NumberType.prototype.max = function(val) {\n\
     return v <= val;\n\
   };\n\
   return this.validators.push([check, 'max']);\n\
+};\n\
+\n\
+/**\n\
+ * Casts to number\n\
+ *\n\
+ * @param {Object} value value to cast\n\
+ * @api private\n\
+ */\n\
+\n\
+NumberType.prototype.cast = function (value) {\n\
+  if (!isNaN(value)){\n\
+    if (null === value) return value;\n\
+    if ('' === value) return null;\n\
+    if ('string' === typeof value) value = Number(value);\n\
+    if (value instanceof Number) return value;\n\
+    if ('number' === typeof value) return value;\n\
+  }\n\
+\n\
+  throw new CastError('date', value, this.path);\n\
 };//@ sourceURL=climongoose/lib/schema/number.js"
 ));
 require.register("climongoose/lib/schema/string.js", Function("exports, require, module",

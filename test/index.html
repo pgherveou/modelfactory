@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>climongoose Tests</title>
+    <title>Tests</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <link rel="stylesheet" href="mocha/mocha.css"/>
   </head>
@@ -9,8 +9,9 @@
     <script src="../build/build.js"></script>
     <script src="mocha/mocha.js"></script>
     <script>mocha.setup('bdd')</script>
-    <script src="climongoose.js"></script>
+    <script src="index.js"></script>
     <script>
+      mocha.globals(['LiveReload']);
       mocha.checkLeaks();
       if (navigator.userAgent.indexOf('PhantomJS') < 0) mocha.run();
     </script>
