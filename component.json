@@ -1,11 +1,13 @@
 {
   "name": "climongoose",
   "repo": "pgherveou/climongoose",
-  "description": "reuse mongoose schema definition in your frontend code",
+  "description": "simple model data model inspired by mongoose",
   "version": "0.0.18",
+
   "dependencies": {
     "component/emitter": "*"
   },
+
   "development": {
     "chaijs/chai": "*",
     "visionmedia/mocha-cloud": "*"

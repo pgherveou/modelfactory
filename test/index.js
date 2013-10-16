@@ -1,6 +1,6 @@
-/*global describe:true,beforeEach:true,afterEach:true,it:true,xit:true*/
+/*global describe:true,beforeEach:true,afterEach:true,it:true*/
 
-var climongoose = require('climongoose'),
+var climongoose = require(this.window ? 'climongoose' : '..'),
     chai = require('chai'),
     expect = chai.expect,
     model = climongoose.model,
@@ -9,18 +9,13 @@ var climongoose = require('climongoose'),
 
 
 /**
- * Sample Project Class
+ * Sample Project sche
  */
 
-function Project(obj) {
-  this.id = obj._id;
-  this.name = obj.name;
-  this.category = obj.category;
-}
-
-Project.prototype.toString = function () {
-  return this.name + ' - ' + this.category;
-};
+var Project = new Schema({
+  name: {type: String},
+  category: {type: String}
+});
 
 /**
  * Sample User Schema
@@ -111,7 +106,6 @@ schema.virtual('name.full').set(function(v) {
   this.name.last = split.join(' ');
 });
 
-
 var User = model('User', schema),
     user,
     emit;
@@ -186,6 +180,12 @@ describe('climongoose specs', function() {
     expect(emit).to.eq(1);
     expect(user.email).to.eq(newMail);
     expect(user.toJSON().email).to.eq(newMail);
+  });
+
+  it('should cast value', function () {
+    user.age = '30';
+    expect(user.age).to.eq(30);
+    expect(user.getValue('age')).to.eq(30);
   });
 
   it('should set property with setter', function() {

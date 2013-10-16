@@ -4,6 +4,9 @@ build:
 components:
 	@component install --dev
 
+test:
+	@./node_modules/.bin/mocha
+
 clean:
 	rm -fr build components template.js
 
