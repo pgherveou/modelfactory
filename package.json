@@ -3,7 +3,8 @@
   "version": "0.0.18",
 
   "dependencies": {
-    "emitter": "http://github.com/component/emitter/archive/1.0.1.tar.gz"
+    "emitter": "http://github.com/component/emitter/archive/1.0.1.tar.gz",
+    "modelarray": "0.x"
   },
 
   "main": "lib/index.js",

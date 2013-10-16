@@ -12,9 +12,13 @@ var climongoose = require(this.window ? 'climongoose' : '..'),
  * Sample Project sche
  */
 
-var Project = new Schema({
+var ProjectSchema = new Schema({
   name: {type: String},
   category: {type: String}
+});
+
+ProjectSchema.path('category').set(function(v) {
+  return v[0].toUpperCase() + v.slice(1);
 });
 
 /**
@@ -33,9 +37,7 @@ var schema = new Schema({
       enum: ['unkown', 'female', 'male']
     },
 
-    creditcard: {
-      type: String
-    },
+    creditcard: String,
 
     age: {
       type: Number,
@@ -44,19 +46,26 @@ var schema = new Schema({
     },
 
     date: {
-      type: Date
+      type: Date,
+    },
+
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+
+    defaultStuff: {
+      type: String,
+      default: 'stuff'
     },
 
     someRef: {
       type: ObjectId
     },
 
-    projects: [Project],
-
-    keywords: {
-      type: [String],
-      required: true
-    },
+    projects: [ProjectSchema],
+    tags: [{type: String}],
+    keywords: {type: [String]},
 
     name: {
       first: {
@@ -106,7 +115,7 @@ schema.virtual('name.full').set(function(v) {
   this.name.last = split.join(' ');
 });
 
-var User = model('User', schema),
+var User = model(schema),
     user,
     emit;
 
@@ -120,8 +129,8 @@ describe('climongoose specs', function() {
       creditcard: '123-456-789',
       sex: 'male',
       projects: [
-        {name: 'project1', category: 'marketing'},
-        {name: 'project2', category: 'finance'}
+        {id: 1, name: 'project1', category: 'marketing'},
+        {id: 2, name: 'project2', category: 'finance'}
       ],
       keywords: ['foo', 'bar'],
       date: new Date(),
@@ -158,7 +167,7 @@ describe('climongoose specs', function() {
   });
 
   it('should get an array property', function() {
-    expect(user.keywords).to.deep.equal(['foo', 'bar']);
+    expect(user.keywords.slice()).to.deep.equal(['foo', 'bar']);
   });
 
   it('should use path getter', function() {
@@ -186,6 +195,11 @@ describe('climongoose specs', function() {
     user.age = '30';
     expect(user.age).to.eq(30);
     expect(user.getValue('age')).to.eq(30);
+  });
+
+  it('should set default values', function () {
+    expect(user.createdAt).to.be.ok;
+    expect(user.defaultStuff).to.eq('stuff');
   });
 
   it('should set property with setter', function() {
@@ -312,7 +326,7 @@ describe('climongoose specs', function() {
   });
 
   it('should use virtual method getter', function() {
-    expect(user.name.full).to.eq('john mcenroe');
+    expect(user.name.full).to.eq('john Mcenroe');
   });
 
   it('should use virtual method setter', function() {
