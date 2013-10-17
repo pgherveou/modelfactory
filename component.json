@@ -2,7 +2,7 @@
   "name": "climongoose",
   "repo": "pgherveou/climongoose",
   "description": "simple model data model inspired by mongoose",
-  "version": "0.1.2",
+  "version": "0.1.3",
 
   "dependencies": {
     "component/emitter": "*",

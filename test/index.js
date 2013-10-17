@@ -149,6 +149,10 @@ describe('climongoose specs', function() {
     expect(climongoose.Error).to.be.ok;
   });
 
+  it('should get same Model class for same schema', function () {
+    expect(climongoose.model(schema)).to.eq(User);
+  });
+
   it('should create default user without errors', function() {
     var create = function () {
       return new User();

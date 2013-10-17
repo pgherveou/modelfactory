@@ -4972,8 +4972,7 @@ var Schema = require('./schema'),\n\
  * module globals\n\
  */\n\
 \n\
-var modelSchemas = [],\n\
-    define, compile;\n\
+var define, compile;\n\
 \n\
 /*!\n\
  * exports stuffs\n\
@@ -5082,10 +5081,8 @@ module.exports.model = function (schema) {\n\
 \n\
   var i;\n\
 \n\
-  // search for existing refs\n\
-  for (i = 0; i < modelSchemas.length; i++) {\n\
-    if (modelSchemas[i].schema === schema) return modelSchemas[i].model;\n\
-  }\n\
+  // return model already generated\n\
+  if (schema.model) return schema.model;\n\
 \n\
   // create model class\n\
   function model () {\n\
@@ -5093,7 +5090,8 @@ module.exports.model = function (schema) {\n\
     Model.apply(this, arguments);\n\
   }\n\
 \n\
-  model.schema = schema;\n\
+  // store generated model\n\
+  schema.model = model;\n\
 \n\
   // inherit from Model\n\
   model.prototype.__proto__ = Model.prototype;\n\
@@ -5108,9 +5106,6 @@ module.exports.model = function (schema) {\n\
   // apply statics\n\
   for (i in schema.statics)\n\
     model[i] = schema.statics[i];\n\
-\n\
-  // save for future refs\n\
-  modelSchemas.push({model: model, schema: Schema});\n\
 \n\
   return model;\n\
 };\n\
