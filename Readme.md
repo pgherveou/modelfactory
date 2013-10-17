@@ -85,6 +85,11 @@ console.log(user.validate()); // KO
 
 should work on any browser supporting [Object.defineProperty](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)
 
+# Credits
+
+  - mongoosejs.com
+  - backbonejs.org
+
 ## License
 
   MIT
