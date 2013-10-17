@@ -65,7 +65,10 @@ var schema = new Schema({
 
     projects: [ProjectSchema],
     tags: [{type: String}],
-    keywords: {type: [String]},
+    keywords: {
+      type: [String],
+      default: ['one', 'two']
+    },
 
     name: {
       first: {
@@ -140,12 +143,18 @@ describe('climongoose specs', function() {
 
   afterEach(function() {
     user.off();
-    user = null;
   });
 
   it('should expose Schema and Error', function() {
     expect(climongoose.Schema).to.be.ok;
     expect(climongoose.Error).to.be.ok;
+  });
+
+  it('should create default user without errors', function() {
+    var create = function () {
+      return new User();
+    };
+    expect(create).to.not.have.throw();
   });
 
   it('should have instance methods', function() {
@@ -200,6 +209,10 @@ describe('climongoose specs', function() {
   it('should set default values', function () {
     expect(user.createdAt).to.be.ok;
     expect(user.defaultStuff).to.eq('stuff');
+  });
+
+  it('should get array default values', function () {
+    expect(new User().keywords.slice()).to.deep.eq(['one', 'two']);
   });
 
   it('should set property with setter', function() {

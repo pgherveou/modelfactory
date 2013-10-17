@@ -5316,15 +5316,16 @@ Model.prototype._build = function (obj) {\n\
     .keys(this.schema.paths)\n\
     .forEach(function (key) {\n\
       var schema = this.schema.paths[key],\n\
-          exist = hasPath(obj, key),\n\
+          exist = obj && hasPath(obj, key),\n\
           val;\n\
 \n\
       if (exist) {\n\
         val = exist.val;\n\
-      } else {\n\
+      } else if (schema.defaultValue) {\n\
         val = schema.getDefault();\n\
+      } else {\n\
+        return;\n\
       }\n\
-\n\
 \n\
       // apply setters\n\
       val = schema.applySetters(val, this);\n\
@@ -5584,13 +5585,10 @@ Schema.interpretAsType = function(path, obj) {\n\
     return new Types.DocumentArray(path,  obj);\n\
   }\n\
 \n\
-  var name = 'string' === typeof type\n\
-    ? type\n\
-    : type.name;\n\
+  var SchemaType = Types.getSchemaType(type);\n\
+  if (!SchemaType) throw new TypeError('Undefined type at ' + path);\n\
 \n\
-  if (!Types[name]) throw new TypeError('Undefined type at ' + path);\n\
-\n\
-  return new Types[name](path, obj);\n\
+  return new SchemaType(path, obj);\n\
 };\n\
 \n\
 /**\n\
@@ -5792,6 +5790,8 @@ Type.prototype.default = function (val) {\n\
       ? val\n\
       : this.cast(val);\n\
     return this;\n\
+  } else if (arguments.length > 1) {\n\
+    this.defaultValue = [].slice.apply(arguments);\n\
   }\n\
 };\n\
 \n\
@@ -5834,8 +5834,10 @@ function SchemaType(name, options, instance) {\n\
   this.validators = [];\n\
 \n\
   Object.keys(options).forEach(function(name) {\n\
-    var fn, opts;\n\
-    if ((fn = this[name]) && 'function' === typeof this[name]) {\n\
+    var fn = this[name],\n\
+        opts;\n\
+\n\
+    if (fn && 'function' === typeof fn) {\n\
       opts = Array.isArray(options[name]) ? options[name] : [options[name]];\n\
       this[name].apply(this, opts);\n\
     }\n\
@@ -6018,12 +6020,45 @@ require.register("climongoose/lib/schema/index.js", Function("exports, require, 
  * module exports\n\
  */\n\
 \n\
-module.exports.String = require('./string');\n\
-module.exports.ObjectId = require('./objectid');\n\
-module.exports.Number = require('./number');\n\
-module.exports.Boolean = require('./boolean');\n\
-module.exports.Date = require('./date');\n\
-module.exports.DocumentArray = require('./documentarray');\n\
+var types = {\n\
+  String: require('./string'),\n\
+  ObjectId: require('./objectid'),\n\
+  Number: require('./number'),\n\
+  Boolean: require('./boolean'),\n\
+  Date: require('./date'),\n\
+  DocumentArray: require('./documentarray')\n\
+};\n\
+\n\
+module.exports = types;\n\
+\n\
+/**\n\
+ * get Schema Type from Schema definition\n\
+ *\n\
+ * Example:\n\
+ *   foo: {type: String} -> StringType\n\
+ *   foo: {type: 'String'} -> StringType\n\
+ *   foo: String -> StringType\n\
+ *\n\
+ * @param  {Type} type\n\
+ * @return {SchemaType}\n\
+ * @api private\n\
+ */\n\
+\n\
+module.exports.getSchemaType = function getType (type) {\n\
+\n\
+  var name = 'string' === typeof type\n\
+    ? type\n\
+    : type.name;\n\
+\n\
+  return types[name];\n\
+};\n\
+\n\
+/*!\n\
+ * expose it to DocumentArray\n\
+ * to let it create\n\
+ */\n\
+\n\
+types.DocumentArray.getSchemaType = module.exports.getSchemaType;\n\
 \n\
 //@ sourceURL=climongoose/lib/schema/index.js"
 ));
@@ -6079,7 +6114,7 @@ DateType.prototype.cast = function (value) {\n\
   }\n\
 \n\
   if (date.toString() !== 'Invalid Date') return date;\n\
-  throw new CastError('date', value, this.path);\n\
+  throw new CastError(this.path, 'date', value);\n\
 };\n\
 \n\
 /*!\n\
@@ -6213,7 +6248,7 @@ NumberType.prototype.cast = function (value) {\n\
     if ('number' === typeof value) return value;\n\
   }\n\
 \n\
-  throw new CastError('date', value, this.path);\n\
+  throw new CastError(this.path, 'number', value);\n\
 };//@ sourceURL=climongoose/lib/schema/number.js"
 ));
 require.register("climongoose/lib/schema/string.js", Function("exports, require, module",
@@ -6221,7 +6256,9 @@ require.register("climongoose/lib/schema/string.js", Function("exports, require,
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
+var SchemaType = require('../schemaType'),\n\
+    Errors = require('../errors'),\n\
+    CastError = Errors.CastError;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -6278,7 +6315,18 @@ StringType.prototype.enum = function() {\n\
   this.validators.push([check, 'enum']);\n\
 };\n\
 \n\
-//@ sourceURL=climongoose/lib/schema/string.js"
+/**\n\
+ * Casts to String\n\
+ *\n\
+ * @param {Object} value value to cast\n\
+ * @api private\n\
+ */\n\
+\n\
+StringType.prototype.cast = function (value) {\n\
+  if (!value) return value;\n\
+  if (value.toString) return value.toString();\n\
+  throw new CastError(this.path, 'string', value);\n\
+};//@ sourceURL=climongoose/lib/schema/string.js"
 ));
 require.register("climongoose/lib/schema/objectid.js", Function("exports, require, module",
 "/*!\n\
@@ -6328,17 +6376,36 @@ var SchemaType = require('../schemaType'),\n\
  */\n\
 \n\
 function DocumentArray(key, options) {\n\
-  SchemaType.call(this, key, options, 'DocumentArray');\n\
 \n\
   // get SubDocument Schema\n\
   var schema = Array.isArray(options)\n\
-     ? options[0]\n\
-     : options.type[0];\n\
+             ? options[0]\n\
+             : options.type[0],\n\
+      type;\n\
 \n\
+\n\
+  // document array class\n\
+  this.DocArray = function DocArray(values) {\n\
+    return ModelArray.call(this, values);\n\
+  };\n\
+\n\
+  // inherit ModelArray\n\
+  this.DocArray.prototype.__proto__ = ModelArray.prototype;\n\
+\n\
+  // if we have a schema generate Array models\n\
   if (schema.constructor.name === 'Schema' ||\n\
       schema.constructor.name === 'Object') {\n\
-    this.SubDocument = DocumentArray.model(schema);\n\
+    this.DocArray.prototype.model = DocumentArray.model(schema);\n\
+\n\
+  // else override modelArray_cast with type#cast\n\
+  } else {\n\
+    type = DocumentArray.getSchemaType(schema);\n\
+    this.DocArray.prototype._cast = function (value) {\n\
+      return type.prototype.cast.call(this, value);\n\
+    };\n\
   }\n\
+\n\
+  SchemaType.call(this, key, options, 'DocumentArray');\n\
 }\n\
 \n\
 /*!\n\
@@ -6357,10 +6424,9 @@ DocumentArray.prototype.__proto__ = SchemaType.prototype;\n\
  */\n\
 \n\
 DocumentArray.prototype.cast = function (value) {\n\
-  if (!(value instanceof ModelArray)) {\n\
-    value = new ModelArray(value, this.SubDocument);\n\
-  }\n\
-  return value;\n\
+  if (value instanceof this.DocArray) return value;\n\
+  if (value && !Array.isArray(value)) value = [value];\n\
+  return new this.DocArray(value);\n\
 };\n\
 \n\
 /**\n\
