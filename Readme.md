@@ -2,7 +2,7 @@
 
   Data models with schema definition, and event propagation inspired from Mongoose & Backbone.js
 
-# Example
+## Example
 
   ```js
 var climongoose = require('climongoose');
@@ -73,6 +73,10 @@ user.trophees.on('change:name', function() {/* do something when a trophee name 
 user.email = "johnyatgmail.com";
 console.log(user.validate()); // KO
   ```
+  
+## API
+
+  coming soon..
 
 ## Installation
 
