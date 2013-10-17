@@ -11,7 +11,7 @@ var climongoose = require('climongoose');
 var User = climongoose.model({
   email: {type: String, required: true, match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/},
   age: {type: Number, min: 13},
-  date: {Date, default: Date.now},
+  date: {type: Date, default: Date.now},
   name: {
     first: {type: String, required: true},
     last: {type: String, required: true}
@@ -20,7 +20,7 @@ var User = climongoose.model({
 })
 
 // define virtuals
-User.schema.virtual('name.full', function () {
+User.schema.virtual('name.full').get(function () {
   return this.name.first + ' ' + this.name.last;
 })
 
@@ -52,6 +52,7 @@ var user = new User({
   trophies: [
    {name: 'Roland Garros', date: 'june-1984'},
    {name: 'Wimbledon', date: 'aug-1984'}
+  ]
 });
 
 // events are emitted on ppty change
@@ -71,9 +72,14 @@ console.log(user.validate()); // KO
 
 ## Installation
 
-  Install with [component(1)](http://component.io):
+  Install with [component](http://component.io):
 
     $ component install pgherveou/climongoose
+
+  Install with [npm](http://npmjs.org):
+
+    $ npm install climongoose
+
 
 ## supported browsers
 
