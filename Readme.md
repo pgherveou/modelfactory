@@ -66,6 +66,12 @@ var user = new User({
   ]
 });
 
+// data are casted according to their type
+user.age = "56"
+user.age === 56 // true
+user.date = 'oct-2013'
+user.date instanceof Date // true
+
 // events are emitted on ppty change
 user.on('change:email', function() {/* do something when email change */});
 user.email = 'johny@gmail.com'
