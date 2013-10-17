@@ -1,4 +1,11 @@
 
+0.1.0 / 2013-10-17
+==================
+
+  * use modelArray for documentArray
+  * refactor model / get / set and event propagation
+  * remove backbone deps
+
 0.0.18 / 2013-08-29
 ==================
 
