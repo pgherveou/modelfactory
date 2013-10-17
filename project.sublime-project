@@ -1,0 +1,27 @@
+{
+  "folders":
+  [
+    {
+      "file_exclude_patterns":
+      [
+        "*-workspace"
+      ],
+      "folder_exclude_patterns":
+      [
+        "node_modules",
+        "components",
+        "build",
+        "test/mocha"
+      ],
+      "name": "project",
+      "path": "."
+    }
+  ],
+  "settings":
+  {
+    "tab_size": 2,
+    "translate_tabs_to_spaces": true,
+    "trim_trailing_white_space_on_save": true,
+    "word_wrap": false
+  }
+}

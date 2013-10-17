@@ -91,7 +91,6 @@ var schema = new Schema({
     }
   });
 
-
 schema.path('name.last').set(function(v) {
   return v[0].toUpperCase() + v.slice(1);
 });
@@ -132,8 +131,8 @@ describe('climongoose specs', function() {
       creditcard: '123-456-789',
       sex: 'male',
       projects: [
-        {id: 1, name: 'project1', category: 'marketing'},
-        {id: 2, name: 'project2', category: 'finance'}
+        {name: 'project1', category: 'marketing'},
+        {name: 'project2', category: 'finance'}
       ],
       keywords: ['foo', 'bar'],
       date: new Date(),
@@ -177,6 +176,12 @@ describe('climongoose specs', function() {
 
   it('should get an array property', function() {
     expect(user.keywords.slice()).to.deep.equal(['foo', 'bar']);
+    expect(user.projects).to.have.length(2);
+  });
+
+  it('should have parent() and parentArray set properly', function() {
+    expect(user.projects[0].parent()).to.eq(user);
+    expect(user.projects[0].parentArray()).to.eq(user.projects);
   });
 
   it('should use path getter', function() {

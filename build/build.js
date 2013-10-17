@@ -5093,6 +5093,8 @@ module.exports.model = function (schema) {\n\
     Model.apply(this, arguments);\n\
   }\n\
 \n\
+  model.schema = schema;\n\
+\n\
   // inherit from Model\n\
   model.prototype.__proto__ = Model.prototype;\n\
 \n\
@@ -5211,6 +5213,22 @@ Model.prototype.get = function (path) {\n\
 \n\
   if (schema) return schema.applyGetters(obj, this);\n\
   return obj;\n\
+};\n\
+\n\
+/**\n\
+ * get parent document\n\
+ */\n\
+\n\
+Model.prototype.parent = function () {\n\
+  return this._parent;\n\
+};\n\
+\n\
+/**\n\
+ * get parent array\n\
+ */\n\
+\n\
+Model.prototype.parentArray = function () {\n\
+  return this._parentArray;\n\
 };\n\
 \n\
 /**\n\
@@ -5742,7 +5760,7 @@ Type.prototype.applySetters = function (value, scope) {\n\
     v = setter.call(scope, v, self);\n\
   });\n\
 \n\
-  return this.cast(v);\n\
+  return this.cast(v, scope);\n\
 };\n\
 \n\
 /**\n\
@@ -6381,11 +6399,12 @@ function DocumentArray(key, options) {\n\
   var schema = Array.isArray(options)\n\
              ? options[0]\n\
              : options.type[0],\n\
-      type;\n\
+      type, Model;\n\
 \n\
 \n\
   // document array class\n\
-  this.DocArray = function DocArray(values) {\n\
+  this.DocArray = function DocArray(values, scope) {\n\
+    this._parent = scope;\n\
     return ModelArray.call(this, values);\n\
   };\n\
 \n\
@@ -6395,7 +6414,14 @@ function DocumentArray(key, options) {\n\
   // if we have a schema generate Array models\n\
   if (schema.constructor.name === 'Schema' ||\n\
       schema.constructor.name === 'Object') {\n\
-    this.DocArray.prototype.model = DocumentArray.model(schema);\n\
+    Model = DocumentArray.model(schema);\n\
+    this.DocArray.prototype._cast = function (value) {\n\
+      var val = value;\n\
+      if (!(value instanceof Model)) val = new Model(value);\n\
+      if (!val._parent) val._parent = this._parent;\n\
+      if (!val._parentArray) val._parentArray = this;\n\
+      return val;\n\
+    };\n\
 \n\
   // else override modelArray_cast with type#cast\n\
   } else {\n\
@@ -6418,15 +6444,14 @@ DocumentArray.prototype.__proto__ = SchemaType.prototype;\n\
  * Casts contents\n\
  *\n\
  * @param {Object} value\n\
- * @param {Document} doc document that triggers the casting\n\
- * @param {Boolean} init whether this is an initialization cast\n\
+ * @param {doc} doc document that triggers the casting\n\
  * @api private\n\
  */\n\
 \n\
-DocumentArray.prototype.cast = function (value) {\n\
+DocumentArray.prototype.cast = function (value, doc) {\n\
   if (value instanceof this.DocArray) return value;\n\
   if (value && !Array.isArray(value)) value = [value];\n\
-  return new this.DocArray(value);\n\
+  return new this.DocArray(value, doc);\n\
 };\n\
 \n\
 /**\n\
