@@ -1,23 +1,19 @@
 <html>
   <head>
-    <title>climongoose Tests</title>
+    <title>Tests</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <link rel="stylesheet" href="mocha/mocha.css"/>
   </head>
   <body>
     <div id="mocha"></div>
-
-    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
-
     <script src="../build/build.js"></script>
     <script src="mocha/mocha.js"></script>
     <script>mocha.setup('bdd')</script>
-    <script src="climongoose.js"></script>
+    <script src="index.js"></script>
     <script>
+      mocha.globals(['LiveReload']);
       mocha.checkLeaks();
-      mocha.globals(['Backbone', '_']);
-      mocha.run()
+      if (navigator.userAgent.indexOf('PhantomJS') < 0) mocha.run();
     </script>
   </body>
 </html>

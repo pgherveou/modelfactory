@@ -1,9 +1,14 @@
 {
   "name": "climongoose",
   "repo": "pgherveou/climongoose",
-  "description": "reuse mongoose schema definition in your frontend code",
-  "version": "0.0.18",
-  "dependencies": {},
+  "description": "simple model data model inspired by mongoose",
+  "version": "0.2.0",
+
+  "dependencies": {
+    "component/emitter": "*",
+    "pgherveou/modelarray": "*"
+  },
+
   "development": {
     "chaijs/chai": "*",
     "visionmedia/mocha-cloud": "*"
@@ -12,13 +17,16 @@
   "main": "lib/index.js",
   "scripts": [
     "lib/index.js",
+    "lib/model.js",
     "lib/utils.js",
+    "lib/globals.js",
     "lib/schema.js",
     "lib/type.js",
     "lib/schemaType.js",
     "lib/virtualType.js",
     "lib/errors/index.js",
     "lib/errors/validator.js",
+    "lib/errors/cast.js",
     "lib/schema/index.js",
     "lib/schema/date.js",
     "lib/schema/boolean.js",
@@ -26,5 +34,6 @@
     "lib/schema/string.js",
     "lib/schema/objectid.js",
     "lib/schema/documentarray.js"
-  ]
+  ],
+  "remotes": []
 }
