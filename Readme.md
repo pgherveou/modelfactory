@@ -9,7 +9,7 @@ var climongoose = require('climongoose');
 
 // create a User Model
 var User = climongoose.model({
-  email: {type: String, required: true, match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/},
+  email: {type: String,  match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/},
   age: {type: Number, min: 13},
   date: {type: Date, default: Date.now},
   name: {
@@ -87,8 +87,8 @@ should work on any browser supporting [Object.defineProperty](https://developer.
 
 # Credits
 
-  - mongoosejs.com
-  - backbonejs.org
+  - [Mongoose](mongoosejs.com)
+  - [Backbone](backbonejs.org)
 
 ## License
 
