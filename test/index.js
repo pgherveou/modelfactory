@@ -350,12 +350,8 @@ describe('climongoose specs', function() {
       emit++;
     });
 
-    project.on('change:name', function () {
-      emit++;
-    });
-
     project.name = 'other';
-    expect(emit).to.eq(2);
+    expect(emit).to.eq(1);
   });
 
   it('should use virtual method getter', function() {

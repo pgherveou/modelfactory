@@ -5255,6 +5255,7 @@ Model.prototype.set = function (key, val, opts) {\n\
   if (key == null) return this;\n\
   var paths = [],\n\
       changedPaths = [],\n\
+      parent = this._parentArray,\n\
       silent, schema, path, ev, parts;\n\
 \n\
   // handle model.set(key, val)\n\
@@ -5297,8 +5298,9 @@ Model.prototype.set = function (key, val, opts) {\n\
     if (!silent) {\n\
 \n\
       // key event\n\
-      if (this.hasListeners('change:' + key)) {\n\
-        changedPaths['change:' + key] = this.get(key);\n\
+      ev = 'change:' + key;\n\
+      if (this.hasListeners(ev) || (parent && parent.hasListeners(ev))) {\n\
+        changedPaths[ev] = this.get(key);\n\
       }\n\
 \n\
       // prepare subpath events\n\
@@ -5308,8 +5310,11 @@ Model.prototype.set = function (key, val, opts) {\n\
         path = parts.join('.');\n\
         ev = 'change';\n\
         if (path) ev += ':' + path;\n\
-        if (!changedPaths[ev] && this.hasListeners(ev))\n\
+\n\
+        // don't bother calculate this.get(path) if there are not listeners\n\
+        if (this.hasListeners(ev) || (parent && parent.hasListeners(ev))) {\n\
           changedPaths[ev] = this.get(path);\n\
+        }\n\
       }\n\
     }\n\
   }, this);\n\
@@ -5319,17 +5324,9 @@ Model.prototype.set = function (key, val, opts) {\n\
     Object\n\
       .keys(changedPaths)\n\
       .forEach(function (ev) {\n\
-\n\
-        // emit doc event\n\
         this.emit(ev, changedPaths[ev], this);\n\
-\n\
-        // proxy event on parentArray\n\
-        if (this._parentArray && this._parentArray.hasListeners(ev)) {\n\
-          this._parentArray.emit(ev, changedPaths[ev], this, this._parentArray);\n\
-        }\n\
-\n\
+        if (parent) parent.emit(ev, changedPaths[ev], this, parent);\n\
       }, this);\n\
-\n\
   }\n\
 \n\
   return this;\n\
