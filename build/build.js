@@ -26,10 +26,14 @@ function require(path, parent, orig) {
   // perform real require()
   // by invoking the module's
   // registered function
-  if (!module.exports) {
-    module.exports = {};
-    module.client = module.component = true;
-    module.call(this, module.exports, require.relative(resolved), module);
+  if (!module._resolving && !module.exports) {
+    var mod = {};
+    mod.exports = {};
+    mod.client = mod.component = true;
+    module._resolving = true;
+    module.call(this, mod.exports, require.relative(resolved), mod);
+    delete module._resolving;
+    module.exports = mod.exports;
   }
 
   return module.exports;
@@ -195,6 +199,605 @@ require.relative = function(parent) {
 
   return localRequire;
 };
+require.register("component-indexof/index.js", Function("exports, require, module",
+"module.exports = function(arr, obj){\n\
+  if (arr.indexOf) return arr.indexOf(obj);\n\
+  for (var i = 0; i < arr.length; ++i) {\n\
+    if (arr[i] === obj) return i;\n\
+  }\n\
+  return -1;\n\
+};//@ sourceURL=component-indexof/index.js"
+));
+require.register("component-emitter/index.js", Function("exports, require, module",
+"\n\
+/**\n\
+ * Module dependencies.\n\
+ */\n\
+\n\
+var index = require('indexof');\n\
+\n\
+/**\n\
+ * Expose `Emitter`.\n\
+ */\n\
+\n\
+module.exports = Emitter;\n\
+\n\
+/**\n\
+ * Initialize a new `Emitter`.\n\
+ *\n\
+ * @api public\n\
+ */\n\
+\n\
+function Emitter(obj) {\n\
+  if (obj) return mixin(obj);\n\
+};\n\
+\n\
+/**\n\
+ * Mixin the emitter properties.\n\
+ *\n\
+ * @param {Object} obj\n\
+ * @return {Object}\n\
+ * @api private\n\
+ */\n\
+\n\
+function mixin(obj) {\n\
+  for (var key in Emitter.prototype) {\n\
+    obj[key] = Emitter.prototype[key];\n\
+  }\n\
+  return obj;\n\
+}\n\
+\n\
+/**\n\
+ * Listen on the given `event` with `fn`.\n\
+ *\n\
+ * @param {String} event\n\
+ * @param {Function} fn\n\
+ * @return {Emitter}\n\
+ * @api public\n\
+ */\n\
+\n\
+Emitter.prototype.on = function(event, fn){\n\
+  this._callbacks = this._callbacks || {};\n\
+  (this._callbacks[event] = this._callbacks[event] || [])\n\
+    .push(fn);\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * Adds an `event` listener that will be invoked a single\n\
+ * time then automatically removed.\n\
+ *\n\
+ * @param {String} event\n\
+ * @param {Function} fn\n\
+ * @return {Emitter}\n\
+ * @api public\n\
+ */\n\
+\n\
+Emitter.prototype.once = function(event, fn){\n\
+  var self = this;\n\
+  this._callbacks = this._callbacks || {};\n\
+\n\
+  function on() {\n\
+    self.off(event, on);\n\
+    fn.apply(this, arguments);\n\
+  }\n\
+\n\
+  fn._off = on;\n\
+  this.on(event, on);\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * Remove the given callback for `event` or all\n\
+ * registered callbacks.\n\
+ *\n\
+ * @param {String} event\n\
+ * @param {Function} fn\n\
+ * @return {Emitter}\n\
+ * @api public\n\
+ */\n\
+\n\
+Emitter.prototype.off =\n\
+Emitter.prototype.removeListener =\n\
+Emitter.prototype.removeAllListeners = function(event, fn){\n\
+  this._callbacks = this._callbacks || {};\n\
+\n\
+  // all\n\
+  if (0 == arguments.length) {\n\
+    this._callbacks = {};\n\
+    return this;\n\
+  }\n\
+\n\
+  // specific event\n\
+  var callbacks = this._callbacks[event];\n\
+  if (!callbacks) return this;\n\
+\n\
+  // remove all handlers\n\
+  if (1 == arguments.length) {\n\
+    delete this._callbacks[event];\n\
+    return this;\n\
+  }\n\
+\n\
+  // remove specific handler\n\
+  var i = index(callbacks, fn._off || fn);\n\
+  if (~i) callbacks.splice(i, 1);\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * Emit `event` with the given args.\n\
+ *\n\
+ * @param {String} event\n\
+ * @param {Mixed} ...\n\
+ * @return {Emitter}\n\
+ */\n\
+\n\
+Emitter.prototype.emit = function(event){\n\
+  this._callbacks = this._callbacks || {};\n\
+  var args = [].slice.call(arguments, 1)\n\
+    , callbacks = this._callbacks[event];\n\
+\n\
+  if (callbacks) {\n\
+    callbacks = callbacks.slice(0);\n\
+    for (var i = 0, len = callbacks.length; i < len; ++i) {\n\
+      callbacks[i].apply(this, args);\n\
+    }\n\
+  }\n\
+\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * Return array of callbacks for `event`.\n\
+ *\n\
+ * @param {String} event\n\
+ * @return {Array}\n\
+ * @api public\n\
+ */\n\
+\n\
+Emitter.prototype.listeners = function(event){\n\
+  this._callbacks = this._callbacks || {};\n\
+  return this._callbacks[event] || [];\n\
+};\n\
+\n\
+/**\n\
+ * Check if this emitter has `event` handlers.\n\
+ *\n\
+ * @param {String} event\n\
+ * @return {Boolean}\n\
+ * @api public\n\
+ */\n\
+\n\
+Emitter.prototype.hasListeners = function(event){\n\
+  return !! this.listeners(event).length;\n\
+};\n\
+//@ sourceURL=component-emitter/index.js"
+));
+require.register("pgherveou-modelarray/index.js", Function("exports, require, module",
+"/*!\n\
+ * dependencies\n\
+ */\n\
+\n\
+var emitter = require('emitter');\n\
+\n\
+/**\n\
+ * ModelArray Constructor\n\
+ * @param {Array} values\n\
+ * @param {[Object]} model item Model constructor\n\
+ * @inherits EventEmitter\n\
+ *\n\
+ * Examples:\n\
+ *     jeremy = new User({id: 1, name: 'jeremy'});\n\
+ *     mehdi = new User({id: 2, name: 'mehdi'});\n\
+ *     pg = new User({id: 3, name: 'pg'});\n\
+ *     thomas = new User({id: 4, name: 'thomas'});\n\
+ *\n\
+ *     // use Users items...\n\
+ *     var users = new modelArray([pg, mehdi, jeremy], User);\n\
+ *\n\
+ *     // or String, Numbers Object or any pojo\n\
+ *     var strs = new ModelArray(['pg', 'mehdi', 'jeremy']);\n\
+ *\n\
+ *     // listen to add event\n\
+ *     users.on('add', function (models) {\n\
+ *        // ...\n\
+ *     });\n\
+ *\n\
+ *     // will cast items, remove duplicate, and trigger a add event..\n\
+ *     models.push(pg, thomas, {id: 5, name: jareen});\n\
+ *\n\
+ *     // will remove event..\n\
+ *     models.remove(jeremy, mehdi);\n\
+ *\n\
+ * @api public\n\
+ */\n\
+\n\
+function ModelArray (values, model) {\n\
+  var arr = [];\n\
+  arr.__proto__ = this;\n\
+  arr._byId = Object.create(null);\n\
+  arr.model = model;\n\
+  arr.silent().push.apply(arr, values);\n\
+  return arr;\n\
+}\n\
+\n\
+/*!\n\
+ * Inherit from Array & mixin with emitter\n\
+ */\n\
+\n\
+ModelArray.prototype = emitter([]);\n\
+\n\
+/*!\n\
+ * expose ModelArray\n\
+ */\n\
+\n\
+module.exports = ModelArray;\n\
+\n\
+/**\n\
+ * Item constructor class\n\
+ *\n\
+ * #### NOTE:\n\
+ * items should expose an id, cid or a toString() method\n\
+ * that can be use as a key to index models in the array\n\
+ *\n\
+ * if your item has a set method, it will be use\n\
+ * to update references when calling arrayItem.set()\n\
+ *\n\
+ * @property model\n\
+ */\n\
+\n\
+ModelArray.prototype.model;\n\
+\n\
+/**\n\
+ * cast arguments and create a unique list of values\n\
+ * that are not already in this array\n\
+ *\n\
+ * @api private\n\
+ */\n\
+\n\
+function _uniq() {\n\
+  var list = [], ids = Object.create(null);\n\
+\n\
+  [].forEach.call(arguments, function (obj) {\n\
+    // ignore item already in array\n\
+    if (this.get(obj)) return;\n\
+\n\
+    // cast object\n\
+    var model = this._cast(obj),\n\
+        id = model.id || model.cid || model;\n\
+\n\
+    // make sure we don't add it twice\n\
+    if (ids[id]) return;\n\
+\n\
+    list.push(model);\n\
+    ids[id] = true;\n\
+  }, this);\n\
+\n\
+  return list;\n\
+}\n\
+\n\
+/**\n\
+ * cast obj to this array model\n\
+ *\n\
+ * @param  {Object} obj\n\
+ * @return the casted value\n\
+ * @api private\n\
+ */\n\
+\n\
+ModelArray.prototype._cast = function (obj) {\n\
+  if (!this.model) return obj;\n\
+  if (obj instanceof this.model) return obj;\n\
+  return new this.model(obj);\n\
+};\n\
+\n\
+/**\n\
+ * silent next operation\n\
+ *\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.silent = function (v) {\n\
+  if (v === undefined) v = true;\n\
+  this._silent = v;\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * Wraps [`Emitter#emit`](https://github.com/component/emitter#emit)\n\
+ * emit event when silent flag is off\n\
+ *\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.emit = function () {\n\
+  if (this._silent) {\n\
+    this._silent = false;\n\
+  } else {\n\
+    emitter.prototype.emit.apply(this, arguments);\n\
+  }\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * index models\n\
+ *\n\
+ * @param {Object} [args...]\n\
+ * @api private\n\
+ */\n\
+\n\
+ModelArray.prototype.index = function () {\n\
+  [].forEach.call(arguments, function (m) {\n\
+    if (m.id) this._byId[m.id] = m;\n\
+    if (m.cid) this._byId[m.cid] = m;\n\
+    if (!m.id && !m.cid) this._byId[m.toString()] = m;\n\
+  }, this);\n\
+};\n\
+\n\
+/**\n\
+ * remove models indexes\n\
+ *\n\
+ * @param {Object} [args...]\n\
+ * @api private\n\
+ */\n\
+\n\
+ModelArray.prototype.unindex = function () {\n\
+  [].forEach.call(arguments, function (m) {\n\
+    if (m.id) delete this._byId[m.id];\n\
+    if (m.cid) delete this._byId[m.cid];\n\
+    if (!m.id && !m.cid) delete this._byId[m.toString()];\n\
+  }, this);\n\
+};\n\
+\n\
+/**\n\
+ * Get a model from the array.\n\
+ *\n\
+ * @param {Object} value an id or model\n\
+ * @return {Model}\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.get = function (obj) {\n\
+  if (!obj) return;\n\
+  return this._byId[obj.id] || this._byId[obj.cid] || this._byId[obj];\n\
+};\n\
+\n\
+/**\n\
+ * Alias of get\n\
+ */\n\
+\n\
+ModelArray.prototype.id = ModelArray.prototype.get;\n\
+\n\
+/**\n\
+ * remove item from the array\n\
+ *\n\
+ * @param {Object} [args...]\n\
+ * @event remove\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.remove = function () {\n\
+  var toRemove = [];\n\
+\n\
+  [].forEach.call(arguments, function (model) {\n\
+    model = this.get(model);\n\
+    if (!model) return;\n\
+    toRemove.push(model);\n\
+    this.unindex(model);\n\
+    [].splice.call(this, this.indexOf(model), 1);\n\
+  }, this);\n\
+\n\
+  // trigger events\n\
+  if (toRemove.length) {\n\
+    this.emit('remove', toRemove, this);\n\
+  } else {\n\
+    this.silent(false);\n\
+  }\n\
+\n\
+  return toRemove;\n\
+};\n\
+\n\
+/**\n\
+ * sync modelArray with specifed models\n\
+ *\n\
+ * @param {Array} models\n\
+ * @event add\n\
+ * @event remove\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.set = function (models) {\n\
+  var toAdd = [],\n\
+      toRemove = [],\n\
+      ids = Object.create(null),\n\
+      silent = !!this._silent,\n\
+      id;\n\
+\n\
+  // normalize to array\n\
+  if (!Array.isArray(models)) models = [models];\n\
+\n\
+  // update, flag items to add/remove\n\
+  models\n\
+    .map(this._cast, this)\n\
+    .forEach(function (model) {\n\
+      var existing = this.get(model);\n\
+      if (existing) {\n\
+        id = existing.id || existing.cid || existing.toString();\n\
+        ids[id] = true;\n\
+        if (existing.set) {\n\
+          existing.set(model);\n\
+        } else {\n\
+          this.unindex(existing);\n\
+          this.index(model);\n\
+          this[this.indexOf(existing)] = model;\n\
+        }\n\
+      } else  {\n\
+        toAdd.push(model);\n\
+      }\n\
+    }, this);\n\
+\n\
+  // get models to remove\n\
+  this.forEach(function (model) {\n\
+    id = model.id || model.cid || model.toString();\n\
+    if (!ids[id]) toRemove.push(model);\n\
+  });\n\
+\n\
+  // remove & add models\n\
+  if (toRemove.length) this.silent(silent).remove.apply(this, toRemove);\n\
+  if (toAdd.length) this.silent(silent).push.apply(this, toAdd);\n\
+  this.silent(false);\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * reset items in array\n\
+ *\n\
+ * @param {Array} reinitialize the array with the one specified here\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.reset = function (models) {\n\
+  [].splice.call(this, 0, this.length);\n\
+  this._byId = Object.create(null);\n\
+  this.silent().push(models);\n\
+  this.emit('reset', models, this);\n\
+};\n\
+\n\
+/**\n\
+ * Wraps [`Array#push`](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/push)\n\
+ *\n\
+ * @event remove\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.push = function () {\n\
+  var values,\n\
+      ret;\n\
+\n\
+  values = _uniq.apply(this, arguments);\n\
+  ret = [].push.apply(this, values);\n\
+  this.index.apply(this, values);\n\
+\n\
+  // trigger events\n\
+  if (values.length) {\n\
+    this.emit('add', values, this);\n\
+  } else {\n\
+    this.silent(false);\n\
+  }\n\
+\n\
+  return ret;\n\
+};\n\
+\n\
+/**\n\
+ * Wraps [`Array#pop`](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/pop)\n\
+ *\n\
+ * @event remove\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.pop = function () {\n\
+  var model = [].pop.call(this);\n\
+  this.unindex(model);\n\
+\n\
+  // trigger event\n\
+  if (model) {\n\
+    this.emit('remove', model, this);\n\
+  } else {\n\
+    this.silent(false);\n\
+  }\n\
+\n\
+  return model;\n\
+};\n\
+\n\
+/**\n\
+ * Wraps [`Array#splice`](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/splice)\n\
+ *\n\
+ * @event remove\n\
+ * @event add\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.splice = function () {\n\
+  var silent = !!this._silent,\n\
+      ret, vals, toRemove, toAdd;\n\
+\n\
+  if (arguments.length) {\n\
+    vals = [].slice.call(arguments, 0, 2);\n\
+    toRemove = [].splice.apply(this, vals);\n\
+\n\
+    toAdd = _uniq.apply(this, [].slice.call(arguments, 2));\n\
+    [].splice.apply(this, [arguments[0], 0].concat(toAdd));\n\
+\n\
+    // update indexes\n\
+    this.unindex.apply(this, toRemove);\n\
+    this.index.apply(this, toAdd);\n\
+  }\n\
+  if (toRemove.length) this.silent(silent).emit('remove', toRemove, this);\n\
+  if (toAdd.length) this.silent(silent).emit('add', toAdd, this);\n\
+  this.silent(false);\n\
+  return ret;\n\
+};\n\
+\n\
+/**\n\
+ * Wraps [`Array#unshift`](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/unshift)\n\
+ *\n\
+ * @event add\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.unshift = function () {\n\
+  var values,\n\
+      ret;\n\
+\n\
+  values = _uniq.apply(this, arguments);\n\
+  ret = [].unshift.apply(this, values);\n\
+  this.index.apply(this, values);\n\
+\n\
+  // trigger event\n\
+  if (values.length) {\n\
+    this.emit('add', values, this);\n\
+  } else {\n\
+    this.silent(false);\n\
+  }\n\
+\n\
+  return ret;\n\
+};\n\
+\n\
+/**\n\
+ * Wraps [`Array#shit`](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/shift)\n\
+ *\n\
+ * @event remove\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.shift = function () {\n\
+  var model = [].shift.call(this);\n\
+  this.unindex(model);\n\
+\n\
+  // trigger event\n\
+  if (model) {\n\
+    this.emit('remove', model, this);\n\
+  } else {\n\
+    this.silent(false);\n\
+  }\n\
+\n\
+  return model;\n\
+};\n\
+\n\
+/**\n\
+ * Wraps [`Array#sort`](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/sort)\n\
+ *\n\
+ * @event sort\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.sort = function (fn) {\n\
+  var compare = fn || (this.model && this.model.prototype && this.model.prototype.compare),\n\
+      ret = [].sort.call(this, compare);\n\
+  this.emit('sort', this);\n\
+  return ret;\n\
+};\n\
+//@ sourceURL=pgherveou-modelarray/index.js"
+));
 require.register("chaijs-assertion-error/index.js", Function("exports, require, module",
 "/*!\n\
  * assertion-error\n\
@@ -4357,17 +4960,22 @@ module.exports = function(runner){\n\
 ));
 require.register("climongoose/lib/index.js", Function("exports, require, module",
 "\n\
-/**\n\
+/*!\n\
  * deps\n\
  */\n\
 \n\
-var Schema = require('./schema')\n\
-  , Errors = require('./errors')\n\
-  , utils = require('./utils')\n\
-  , getPath = utils.getPath\n\
-  , setPath = utils.setPath;\n\
+var Schema = require('./schema'),\n\
+    Model = require('./model'),\n\
+    Errors = require('./errors');\n\
 \n\
-/**\n\
+/*!\n\
+ * module globals\n\
+ */\n\
+\n\
+var modelSchemas = [],\n\
+    define, compile;\n\
+\n\
+/*!\n\
  * exports stuffs\n\
  */\n\
 \n\
@@ -4376,221 +4984,406 @@ module.exports.Error = Errors;\n\
 \n\
 /**\n\
  * compile schema\n\
+ *\n\
+ * @param  {Object} tree\n\
+ * @param  {Object} proto\n\
+ * @param  {String} prefix\n\
+ * @api private\n\
  */\n\
 \n\
-function compile(tree, proto, prefix) {\n\
+compile = function compile(tree, proto, prefix) {\n\
   var keys = Object.keys(tree);\n\
-  keys.forEach(function(key) {\n\
+  keys.forEach(function (key) {\n\
     var limb = tree[key];\n\
 \n\
-    define(key\n\
-        , (('Object' === limb.constructor.name\n\
+    define(key,\n\
+           (('Object' === limb.constructor.name\n\
                && Object.keys(limb).length)\n\
                && (!limb.type || limb.type.type)\n\
                ? limb\n\
-               : null)\n\
-        , proto\n\
-        , prefix\n\
-        , keys);\n\
-\n\
+               : null),\n\
+           proto,\n\
+           prefix,\n\
+           keys);\n\
   });\n\
-}\n\
+};\n\
 \n\
 /**\n\
  * define accessors on the incoming prototype\n\
+ *\n\
+ * @param  {[type]} prop\n\
+ * @param  {[type]} subprops\n\
+ * @param  {[type]} prototype\n\
+ * @param  {[type]} prefix\n\
+ * @api private\n\
  */\n\
 \n\
-function define(prop, subprops, prototype, prefix, keys) {\n\
-  prefix || (prefix = \"\");\n\
-  var path = (prefix ? prefix + \".\" : \"\") + prop;\n\
+define = function define(prop, subprops, prototype, prefix) {\n\
+  prefix || (prefix = '');\n\
+  var path = (prefix ? prefix + '.' : '') + prop;\n\
 \n\
   if (subprops) {\n\
     return Object.defineProperty(prototype, prop, {\n\
       enumerable: true,\n\
 \n\
-      get: function() {\n\
-        if (!this.$__getters) this.$__getters = {};\n\
+      get: function () {\n\
+        if (!this.__getters) this.__getters = {};\n\
 \n\
-        if (!this.$__getters[path]) {\n\
+        if (!this.__getters[path]) {\n\
           var nested = {};\n\
 \n\
-          if (!prefix)\n\
-            nested.$__scope = this;\n\
-          else\n\
-            nested.$__scope = this.$__scope;\n\
+          if (!prefix) {\n\
+            nested.__scope = this;\n\
+          } else {\n\
+            nested.__scope = this.__scope;\n\
+          }\n\
 \n\
           compile(subprops, nested, path);\n\
-          this.$__getters[path] = nested;\n\
+          this.__getters[path] = nested;\n\
         }\n\
-        return this.$__getters[path];\n\
+        return this.__getters[path];\n\
       },\n\
 \n\
-      set: function(v) {\n\
-        (this.$__scope || this).set(path, v);\n\
+      set: function (v) {\n\
+        (this.__scope || this).set(path, v);\n\
       }\n\
     });\n\
   } else {\n\
     Object.defineProperty(prototype, prop, {\n\
       enumerable: true,\n\
 \n\
-      get: function() {\n\
-        if (this.$__scope) return this.$__scope.get(path);\n\
+      get: function () {\n\
+        if (this.__scope) return this.__scope.get(path);\n\
         if (this.get) return this.get(path);\n\
         return this[path];\n\
       },\n\
 \n\
-      set: function(v) {\n\
-        (this.$__scope || this).set(path, v);\n\
+      set: function (v) {\n\
+        (this.__scope || this).set(path, v);\n\
       }\n\
     });\n\
   }\n\
+};\n\
+\n\
+/**\n\
+ * model factory\n\
+ *\n\
+ * @param  {Schema} schema\n\
+ * @return {Model} the model class constructor\n\
+ * @api public\n\
+ */\n\
+\n\
+module.exports.model = function (schema) {\n\
+\n\
+  // cast to Schema instance?\n\
+  if (!(schema instanceof Schema)) {\n\
+    schema = new Schema(schema);\n\
+  }\n\
+\n\
+  var i;\n\
+\n\
+  // search for existing refs\n\
+  for (i = 0; i < modelSchemas.length; i++) {\n\
+    if (modelSchemas[i].schema === schema) return modelSchemas[i].model;\n\
+  }\n\
+\n\
+  // create model class\n\
+  function model () {\n\
+    this.schema = schema;\n\
+    Model.apply(this, arguments);\n\
+  }\n\
+\n\
+  // inherit from Model\n\
+  model.prototype.__proto__ = Model.prototype;\n\
+\n\
+  // compile schema\n\
+  compile(schema.tree, model.prototype);\n\
+\n\
+  // apply methods\n\
+  for (i in schema.methods)\n\
+    model.prototype[i] = schema.methods[i];\n\
+\n\
+  // apply statics\n\
+  for (i in schema.statics)\n\
+    model[i] = schema.statics[i];\n\
+\n\
+  // save for future refs\n\
+  modelSchemas.push({model: model, schema: Schema});\n\
+\n\
+  return model;\n\
+};\n\
+\n\
+/*!\n\
+ * expose model factory\n\
+ * to DocumentArray to let them create EmbeddedDocument\n\
+ */\n\
+\n\
+require('./schema/documentarray').model = module.exports.model;\n\
+//@ sourceURL=climongoose/lib/index.js"
+));
+require.register("climongoose/lib/model.js", Function("exports, require, module",
+"var Emitter = require('emitter'),\n\
+    utils = require('./utils'),\n\
+    globals = require('./globals'),\n\
+    getPath = utils.getPath,\n\
+    hasPath = utils.hasPath,\n\
+    setPath = utils.setPath,\n\
+    idCounter = 0;\n\
+\n\
+function uniqueId() {\n\
+  return  'm_' + (++idCounter);\n\
 }\n\
 \n\
 /**\n\
- * exports model factory\n\
+ * Model constructor, inherit from Emitter\n\
+ *\n\
+ * @param {[type]} obj [description]\n\
+ * @api public\n\
  */\n\
 \n\
-module.exports.model = function(BBModel) {\n\
+function Model(obj) {\n\
+  this._doc = {};\n\
+  this.cid = uniqueId();\n\
+  this._build(obj);\n\
+  this.emit('init', this, obj);\n\
+}\n\
 \n\
-  var BaseModel = BBModel.extend({\n\
+/*!\n\
+ * Inherit from Emitter\n\
+ */\n\
 \n\
-    /**\n\
-     * Get property\n\
-     * @param  {String} key\n\
-     */\n\
+Model.prototype.__proto__ = Emitter.prototype;\n\
 \n\
-    get: function (path) {\n\
-      var schema = this.schema.path(path) || this.schema.virtualpath(path)\n\
-        , obj = getPath(this.attributes, path);\n\
+/**\n\
+ * The documents schema.\n\
+ *\n\
+ * @property schema\n\
+ * @api public\n\
+ */\n\
 \n\
-      if (schema) return schema.applyGetters(obj, this);\n\
-      return obj;\n\
-    },\n\
+Model.prototype.schema;\n\
 \n\
-    getValue: function(path) {\n\
-      return getPath(this.attributes, path);\n\
-    },\n\
+/*!\n\
+ * export\n\
+ */\n\
 \n\
-    /**\n\
-     * set property\n\
-     * not using setter for now...\n\
-     *\n\
-     * @param  {String|Object}  key\n\
-     * @param  {Object}         val\n\
-     * @param  {[Object]}       options\n\
-     */\n\
+module.exports = Model;\n\
 \n\
-    set: function(key, val, options) {\n\
-      if ('object' === typeof key || key.indexOf('.') === -1) {\n\
-        BBModel.prototype.set.apply(this, arguments);\n\
-      } else {\n\
+/**\n\
+ * get model id using _id property\n\
+ *\n\
+ * @property id\n\
+ * @api public\n\
+ */\n\
 \n\
-       var schema = this.schema.path(key) || this.schema.virtualpath(key)\n\
-          , prev = getPath(this.attributes, key);\n\
+Object.defineProperty(Model.prototype, 'id', {\n\
+  get: function () {\n\
+    return this._doc[globals.idAttribute];\n\
+  }\n\
+});\n\
 \n\
-        if (prev === val) return this;\n\
-        if (schema) val = schema.applySetters(val, this);\n\
-        if (schema && schema.instance === 'virtual') {\n\
-          this.trigger(\"change:\" + key, this, val);\n\
-        } else {\n\
-          setPath(this.attributes, key, val);\n\
-          this.trigger(\"change:\" + key, this, val);\n\
-          this.trigger(\"change\", this);\n\
-        }\n\
-      }\n\
-      return this;\n\
-    },\n\
+/**\n\
+ * Has this model been saved to the server yet\n\
+ *\n\
+ * @property isNew\n\
+ * @api public\n\
+ */\n\
 \n\
-    /**\n\
-     * validate doc\n\
-     *\n\
-     * @param  {Object} attrs attributes to validate\n\
-     * @param  {Object} opts\n\
-     * @return {Array}  error array if any\n\
-     */\n\
+Object.defineProperty(Model.prototype, 'isNew', {\n\
+  get: function () {\n\
+    return !!this.id;\n\
+  }\n\
+});\n\
 \n\
-    validate: function(attrs, opts) {\n\
-      if (!arguments.length) return;\n\
+/**\n\
+ * Get property using schema getters\n\
+ *\n\
+ * @param  {String} key\n\
+ * @return {Object} path value\n\
+ * @api public\n\
+ */\n\
 \n\
-      if (!opts) {\n\
-        opts = attrs;\n\
-        attrs = this.attributes;\n\
-      }\n\
+Model.prototype.get = function (path) {\n\
+  if (!path) return this;\n\
 \n\
-      if (!opts.validate) return;\n\
+  var schema = this.schema.path(path) || this.schema.virtualpath(path),\n\
+      obj = getPath(this._doc, path);\n\
 \n\
-      var errors = []\n\
-        , _this = this\n\
-        , paths;\n\
-\n\
-      if (opts.paths) {\n\
-        paths = opts.paths;\n\
-        if ('string' === typeof paths) paths = paths.split(' ');\n\
-      } else {\n\
-        paths = Object.keys(this.schema.paths);\n\
-      }\n\
-\n\
-      paths.forEach(function(path) {\n\
-        var p = _this.schema.path(path)\n\
-          , val = getPath(attrs, path)\n\
-          , err = p.doValidate(val, _this);\n\
-        if (err) errors.push.apply(errors, err);\n\
-      });\n\
-\n\
-      if (errors.length) return errors;\n\
-    }\n\
-  });\n\
-\n\
-  /**\n\
-   * create a named constructor\n\
-   *\n\
-   * @param  {String} name\n\
-   * @param  {Function} constructor\n\
-   * @api private\n\
-   */\n\
-\n\
-  var createNamedConstructor = function(name, constructor) {\n\
-    name = name.replace(/[^a-z]/ig, '');\n\
-    name = name[0].toUpperCase() + name.slice(1);\n\
-    var fn = new Function('constructor',\n\
-      \"return function \" + name + \"() {constructor.apply(this, arguments);};\"\n\
-    );\n\
-    return fn(constructor);\n\
-  };\n\
-\n\
-  /**\n\
-   * model factory\n\
-   * @param  {String} name\n\
-   * @param  {Scheme} schema\n\
-   */\n\
-\n\
-  return function(name, schema) {\n\
-\n\
-    if (!(schema instanceof Schema)) {\n\
-      schema = new Schema(schema);\n\
-    }\n\
-\n\
-    var Model = BaseModel.extend({\n\
-      constructor: createNamedConstructor(name, BBModel),\n\
-      schema: schema\n\
-    });\n\
-\n\
-    // compile schema\n\
-    compile(schema.tree, Model.prototype);\n\
-\n\
-    // apply methods\n\
-    for (var i in schema.methods)\n\
-      Model.prototype[i] = schema.methods[i];\n\
-\n\
-    // apply statics\n\
-    for (var i in schema.statics)\n\
-      Model[i] = schema.statics[i];\n\
-\n\
-\n\
-    return Model;\n\
-  };\n\
+  if (schema) return schema.applyGetters(obj, this);\n\
+  return obj;\n\
 };\n\
-//@ sourceURL=climongoose/lib/index.js"
+\n\
+/**\n\
+ * Get raw value\n\
+ *\n\
+ * @param  {String} key\n\
+ * @return {Object} path raw value\n\
+ * @api public\n\
+ */\n\
+\n\
+Model.prototype.getValue = function (path) {\n\
+  return getPath(this._doc, path);\n\
+};\n\
+\n\
+/**\n\
+ * set property\n\
+ *\n\
+ * @param  {String|Object}  key\n\
+ * @param  {Object}         val\n\
+ * @api public\n\
+ */\n\
+\n\
+Model.prototype.set = function (key, val, opts) {\n\
+  if (key == null) return this;\n\
+  var paths = [],\n\
+      changedPaths = [],\n\
+      silent, schema, path, ev, parts;\n\
+\n\
+  // handle model.set(key, val)\n\
+  if ('string' === typeof key) {\n\
+    schema = this.schema.path(key) || this.schema.virtualpath(key);\n\
+    if ('object' === typeof val) {\n\
+      paths = this.schema.getKeyVals(val, key);\n\
+    } else if (schema) {\n\
+      paths.push({key: key, val: val});\n\
+    }\n\
+\n\
+  // handle model.set(val)\n\
+  } else {\n\
+    paths = this.schema.getKeyVals(key);\n\
+    opts = val;\n\
+  }\n\
+\n\
+  // silent opt\n\
+  silent = opts && opts.silent;\n\
+\n\
+  // iterate over paths\n\
+  paths.forEach(function (keyval) {\n\
+    var key = keyval.key,\n\
+        val = keyval.val,\n\
+        schema;\n\
+\n\
+    // return if value has not changed\n\
+    if (getPath(this._doc, key) === val) return;\n\
+\n\
+    // get path's schema\n\
+    schema = this.schema.path(key) || this.schema.virtualpath(key);\n\
+\n\
+    // apply setters\n\
+    val = schema.applySetters(val, this);\n\
+\n\
+    // apply value\n\
+    if (schema.instance !== 'virtual') setPath(this._doc, key, val);\n\
+\n\
+    // trigger events\n\
+    if (!silent) {\n\
+      this.emit('change:' + key, this.get(key), this);\n\
+      parts = key.split('.');\n\
+\n\
+      // prepare subpath events\n\
+      while(parts.length) {\n\
+        parts.pop();\n\
+        path = parts.join('.');\n\
+        ev = 'change';\n\
+        if (path) ev += ':' + path;\n\
+        if (!changedPaths[ev] && this.hasListeners(ev))\n\
+          changedPaths[ev] = this.get(path);\n\
+      }\n\
+    }\n\
+  }, this);\n\
+\n\
+  // emit subpath events\n\
+  if (!silent) {\n\
+    Object\n\
+      .keys(changedPaths)\n\
+      .forEach(function (ev) {\n\
+        this.emit(ev, changedPaths[ev], this);\n\
+      }, this);\n\
+  }\n\
+\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * build model with specified obj and default values\n\
+ *\n\
+ * @param  {Object}  obj\n\
+ * @api private\n\
+ */\n\
+\n\
+Model.prototype._build = function (obj) {\n\
+  Object\n\
+    .keys(this.schema.paths)\n\
+    .forEach(function (key) {\n\
+      var schema = this.schema.paths[key],\n\
+          exist = obj && hasPath(obj, key),\n\
+          val;\n\
+\n\
+      if (exist) {\n\
+        val = exist.val;\n\
+      } else if (schema.defaultValue) {\n\
+        val = schema.getDefault();\n\
+      } else {\n\
+        return;\n\
+      }\n\
+\n\
+      // apply setters\n\
+      val = schema.applySetters(val, this);\n\
+      setPath(this._doc, key, val);\n\
+\n\
+\n\
+    }, this);\n\
+};\n\
+\n\
+/**\n\
+ * validate doc\n\
+ *\n\
+ * opts are:\n\
+ *   - path list of path to validate for this model default to all\n\
+ *\n\
+ * @param  {Object} doc to validate\n\
+ * @param  {Object} opts\n\
+ * @return {Array}  error array if any\n\
+ * @api public\n\
+ */\n\
+\n\
+Model.prototype.validate = function (doc, opts) {\n\
+  if (!opts) {\n\
+    opts = doc || {};\n\
+    doc = this._doc;\n\
+  }\n\
+\n\
+  var errors = [],\n\
+      paths;\n\
+\n\
+  if (opts.paths) {\n\
+    paths = opts.paths;\n\
+    if ('string' === typeof paths) paths = paths.split(' ');\n\
+  } else {\n\
+    paths = Object.keys(this.schema.paths);\n\
+  }\n\
+\n\
+  paths.forEach(function (path) {\n\
+    var p = this.schema.path(path),\n\
+        val = getPath(doc, path),\n\
+        err = p.doValidate(val, this);\n\
+    if (err) errors.push.apply(errors, err);\n\
+  }, this);\n\
+\n\
+  if (errors.length) return errors;\n\
+};\n\
+\n\
+/**\n\
+ * get JSON representation of this model\n\
+ *\n\
+ * @return {Object}\n\
+ * @api public\n\
+ */\n\
+\n\
+Model.prototype.toJSON = function () {\n\
+  return this._doc;\n\
+};\n\
+//@ sourceURL=climongoose/lib/model.js"
 ));
 require.register("climongoose/lib/utils.js", Function("exports, require, module",
 "/**\n\
@@ -4599,10 +5392,38 @@ require.register("climongoose/lib/utils.js", Function("exports, require, module"
  * @param  {String} path\n\
  */\n\
 \n\
-module.exports.getPath = function(obj, path) {\n\
-  return path.split('.').reduce(function(prev, current){\n\
-    if (prev) return prev[current];\n\
-  }, obj);\n\
+module.exports.getPath = function getPath(obj, path) {\n\
+  var paths = path.split('.'),\n\
+      ref = obj,\n\
+      i;\n\
+\n\
+  for (i = 0; i < paths.length; i++) {\n\
+    path = paths[i];\n\
+    if (!ref[path]) return ref[path];\n\
+    ref = ref[path];\n\
+  }\n\
+  return ref;\n\
+};\n\
+\n\
+/**\n\
+ * check if obj has specified path\n\
+ *\n\
+ * @param  {Object}  obj\n\
+ * @param  {String}  path\n\
+ * @return {Object} false if path does not exist or truthy {val: 'xxx'} if value exist\n\
+ */\n\
+\n\
+module.exports.hasPath = function hasPath(obj, path) {\n\
+  var paths = path.split('.'),\n\
+      ref = obj,\n\
+      i;\n\
+\n\
+  for (i = 0; i < paths.length; i++) {\n\
+    path = paths[i];\n\
+    if (!ref.hasOwnProperty(path)) return false;\n\
+    ref = ref[path];\n\
+  }\n\
+  return {val: ref};\n\
 };\n\
 \n\
 /**\n\
@@ -4613,17 +5434,22 @@ module.exports.getPath = function(obj, path) {\n\
  * @param  {Object} val\n\
  */\n\
 \n\
-module.exports.setPath = function(obj, path, val) {\n\
-  var subpaths = path.split('.')\n\
-    , last = subpaths.pop();\n\
+module.exports.setPath = function setPath(obj, path, val) {\n\
+  var subpaths = path.split('.'),\n\
+      last = subpaths.pop();\n\
 \n\
   obj = subpaths.reduce(function(prev, current){\n\
-    if (prev) return prev[current];\n\
+    if (!prev[current]) prev[current] = {};\n\
+    return prev[current];\n\
+\n\
   }, obj);\n\
 \n\
   if (obj) obj[last] = val;\n\
 };\n\
 //@ sourceURL=climongoose/lib/utils.js"
+));
+require.register("climongoose/lib/globals.js", Function("exports, require, module",
+"module.exports.idAttribute = '_id';//@ sourceURL=climongoose/lib/globals.js"
 ));
 require.register("climongoose/lib/schema.js", Function("exports, require, module",
 "\n\
@@ -4631,20 +5457,10 @@ require.register("climongoose/lib/schema.js", Function("exports, require, module
  * module dependencies\n\
  */\n\
 \n\
-var Types = require('./schema/index')\n\
-  , VirtualType = require('./virtualType');\n\
-\n\
-/**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = Schema;\n\
-\n\
-/**\n\
- * expose Types\n\
- */\n\
-\n\
-Schema.Types = Types;\n\
+var Types = require('./schema/index'),\n\
+    VirtualType = require('./virtualType'),\n\
+    utils = require('./utils'),\n\
+    hasPath = utils.hasPath;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -4662,6 +5478,18 @@ function Schema(obj) {\n\
 }\n\
 \n\
 /**\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = Schema;\n\
+\n\
+/**\n\
+ * expose Types\n\
+ */\n\
+\n\
+Schema.Types = Types;\n\
+\n\
+/**\n\
  * add key path / schema type pairs to this schema\n\
  *\n\
  * @param {Object} obj\n\
@@ -4670,7 +5498,6 @@ function Schema(obj) {\n\
  */\n\
 \n\
 Schema.prototype.add = function(obj, prefix) {\n\
-  var _this = this;\n\
   prefix || (prefix = '');\n\
 \n\
   Object.keys(obj).forEach(function(key) {\n\
@@ -4678,15 +5505,17 @@ Schema.prototype.add = function(obj, prefix) {\n\
       throw new TypeError('Invalid value for schema path `' + (prefix + key) + '`');\n\
     }\n\
 \n\
-    if (Array.isArray(obj[key]) || Array.isArray(obj[key].type)) {\n\
-      _this.path(prefix + key, obj[key]);\n\
-    } else if (obj[key].type && 'function' === typeof obj[key].type) {\n\
-      _this.path(prefix + key, obj[key]);\n\
-    } else {\n\
-      _this.add(obj[key], prefix + key + '.');\n\
-    }\n\
+    if (obj[key].constructor && obj[key].constructor.name !== 'Object')\n\
+      obj[key] = {type: obj[key]};\n\
 \n\
-  });\n\
+    if (Array.isArray(obj[key]) || Array.isArray(obj[key].type)) {\n\
+      this.path(prefix + key, obj[key]);\n\
+    } else if (obj[key].type && 'function' === typeof obj[key].type) {\n\
+      this.path(prefix + key, obj[key]);\n\
+    } else {\n\
+      this.add(obj[key], prefix + key + '.');\n\
+    }\n\
+  }, this);\n\
 };\n\
 \n\
 /**\n\
@@ -4713,15 +5542,16 @@ Schema.prototype.path = function(path, obj) {\n\
     if (!branch[sub]) branch[sub] = {};\n\
     if ('object' !== typeof branch[sub]) {\n\
       throw new Error(\n\
-          \"Cannot set nested path `\" + path + \"`.\\n\
-\"\n\
-        + \"Parent path `\" + (subpaths.slice(0, i).concat([sub]).join('.')) + \"\\n\
-\"\n\
-        + \"already set to type \" + branch[sub].name + \".\"\n\
+          'Cannot set nested path `' + path + '`.\\n\
+'\n\
+        + 'Parent path `' + (subpaths.slice(0, i).concat([sub]).join('.')) + '\\n\
+'\n\
+        + 'already set to type ' + branch[sub].name + '.'\n\
       );\n\
     }\n\
     branch = branch[sub];\n\
   });\n\
+\n\
   branch[last] = obj;\n\
   this.paths[path] = Schema.interpretAsType(path, obj);\n\
   return this;\n\
@@ -4739,7 +5569,7 @@ Schema.prototype.virtualpath = function (name) {\n\
 };\n\
 \n\
 /**\n\
- * Converts type arguments into Mongoose Types.\n\
+ * Converts type arguments into Types.\n\
  *\n\
  * @param {String} path\n\
  * @param {Object} obj constructor\n\
@@ -4751,16 +5581,14 @@ Schema.interpretAsType = function(path, obj) {\n\
     ? obj.type\n\
     : {};\n\
 \n\
-  if (Array.isArray(obj) || Array.isArray(obj.type))\n\
+  if (Array.isArray(obj) || Array.isArray(obj.type)) {\n\
     return new Types.DocumentArray(path,  obj);\n\
+  }\n\
 \n\
-  var name = 'string' == typeof type\n\
-    ? type\n\
-    : type.name;\n\
+  var SchemaType = Types.getSchemaType(type);\n\
+  if (!SchemaType) throw new TypeError('Undefined type at ' + path);\n\
 \n\
-  if (!Types[name]) throw new TypeError(\"Undefined type at \" + path);\n\
-\n\
-  return new Types[name](path, obj);\n\
+  return new SchemaType(path, obj);\n\
 };\n\
 \n\
 /**\n\
@@ -4775,12 +5603,47 @@ Schema.prototype.virtual = function (name) {\n\
   var virtuals = this.virtuals;\n\
   var parts = name.split('.');\n\
 \n\
-  return virtuals[name] = parts.reduce(function (mem, part, i) {\n\
+  virtuals[name] = parts.reduce(function (mem, part, i) {\n\
     mem[part] || (mem[part] = (i === parts.length-1)\n\
                             ? new VirtualType(name)\n\
                             : {});\n\
     return mem[part];\n\
   }, this.tree);\n\
+  return virtuals[name];\n\
+};\n\
+\n\
+/**\n\
+ * extract path/value from object\n\
+ *\n\
+ * @param  {Object} obj\n\
+ * @return {Object}\n\
+ *\n\
+ * @api public\n\
+ */\n\
+\n\
+Schema.prototype.getKeyVals = function (obj, prefix) {\n\
+  var ret = [],\n\
+      o;\n\
+\n\
+  if (prefix) {\n\
+    o = {};\n\
+    o[prefix] = obj;\n\
+  } else {\n\
+    o = obj;\n\
+  }\n\
+\n\
+  Object\n\
+    .keys(this.paths)\n\
+    .forEach(function (key) {\n\
+      var exist = hasPath(o, key);\n\
+      if (exist) {\n\
+        ret.push({\n\
+          key: key,\n\
+          val: exist.val\n\
+        });\n\
+      }\n\
+    });\n\
+  return ret;\n\
 };\n\
 \n\
 /**\n\
@@ -4792,10 +5655,11 @@ Schema.prototype.virtual = function (name) {\n\
  */\n\
 \n\
 Schema.prototype.method = function (name, fn) {\n\
-  if ('string' != typeof name)\n\
+  if ('string' !== typeof name) {\n\
     for (var i in name) this.methods[i] = name[i];\n\
-  else\n\
+  } else {\n\
     this.methods[name] = fn;\n\
+  }\n\
   return this;\n\
 };\n\
 \n\
@@ -4808,22 +5672,16 @@ Schema.prototype.method = function (name, fn) {\n\
  */\n\
 \n\
 Schema.prototype.static = function(name, fn) {\n\
-  if ('string' != typeof name)\n\
-    for (var i in name)\n\
-      this.statics[i] = name[i];\n\
-  else\n\
+  if ('string' !== typeof name) {\n\
+    for (var i in name) this.statics[i] = name[i];\n\
+  } else {\n\
     this.statics[name] = fn;\n\
+  }\n\
   return this;\n\
 };//@ sourceURL=climongoose/lib/schema.js"
 ));
 require.register("climongoose/lib/type.js", Function("exports, require, module",
 "/**\n\
- * exports\n\
- */\n\
-\n\
-module.exports = Type;\n\
-\n\
-/**\n\
  * Type constructor\n\
  *\n\
  * @api public\n\
@@ -4834,6 +5692,13 @@ function Type (name) {\n\
   this.getters = [];\n\
   this.setters = [];\n\
 }\n\
+\n\
+/**\n\
+ * exports\n\
+ */\n\
+\n\
+module.exports = Type;\n\
+\n\
 \n\
 /**\n\
  * Defines a getter.\n\
@@ -4870,14 +5735,14 @@ Type.prototype.set = function (fn) {\n\
  */\n\
 \n\
 Type.prototype.applySetters = function (value, scope) {\n\
-  var v = value\n\
-    , self = this;\n\
+  var v = value,\n\
+      self = this;\n\
 \n\
   this.setters.forEach(function (setter) {\n\
     v = setter.call(scope, v, self);\n\
   });\n\
 \n\
-  return v;\n\
+  return this.cast(v);\n\
 };\n\
 \n\
 /**\n\
@@ -4889,8 +5754,8 @@ Type.prototype.applySetters = function (value, scope) {\n\
  */\n\
 \n\
 Type.prototype.applyGetters = function (value, scope) {\n\
-  var v = value\n\
-    , self = this;\n\
+  var v = value,\n\
+      self = this;\n\
 \n\
   this.getters.forEach(function (getter) {\n\
     v = getter.call(scope, v, self);\n\
@@ -4898,6 +5763,52 @@ Type.prototype.applyGetters = function (value, scope) {\n\
 \n\
   return v;\n\
 };\n\
+\n\
+/**\n\
+ * cast value to type default to identity\n\
+ *\n\
+ * @param  {Object} value to cast\n\
+ * @return {Object} casted value\n\
+ * @api private\n\
+ */\n\
+\n\
+Type.prototype.cast = function (v) {\n\
+  return v;\n\
+};\n\
+\n\
+/**\n\
+ * Sets a default value for this Type.\n\
+ *\n\
+ * @param {Function|any} val the default value\n\
+ * @return {defaultValue}\n\
+ * @api public\n\
+ */\n\
+\n\
+Type.prototype.default = function (val) {\n\
+  if (1 === arguments.length) {\n\
+    this.defaultValue = typeof val === 'function'\n\
+      ? val\n\
+      : this.cast(val);\n\
+    return this;\n\
+  } else if (arguments.length > 1) {\n\
+    this.defaultValue = [].slice.apply(arguments);\n\
+  }\n\
+};\n\
+\n\
+/**\n\
+ * Gets the default value\n\
+ *\n\
+ * @param {Object} scope the scope which callback are executed\n\
+ * @api private\n\
+ */\n\
+\n\
+Type.prototype.getDefault = function (scope) {\n\
+  var ret = 'function' === typeof this.defaultValue\n\
+    ? this.defaultValue.call(scope)\n\
+    : this.defaultValue;\n\
+  return ret;\n\
+};\n\
+\n\
 //@ sourceURL=climongoose/lib/type.js"
 ));
 require.register("climongoose/lib/schemaType.js", Function("exports, require, module",
@@ -4905,20 +5816,8 @@ require.register("climongoose/lib/schemaType.js", Function("exports, require, mo
  * module deps\n\
  */\n\
 \n\
-var ValidatorError = require('./errors/validator')\n\
-  , Type = require('./type');\n\
-\n\
-/**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = SchemaType;\n\
-\n\
-/**\n\
- * extend Type\n\
- */\n\
-\n\
-SchemaType.prototype.__proto__ = Type.prototype;\n\
+var ValidatorError = require('./errors/validator'),\n\
+    Type = require('./type');\n\
 \n\
 /**\n\
  * SchemaType constructor\n\
@@ -4929,25 +5828,40 @@ SchemaType.prototype.__proto__ = Type.prototype;\n\
  */\n\
 \n\
 function SchemaType(name, options, instance) {\n\
-  var _this = this;\n\
   Type.call(this, name);\n\
   this.options = options;\n\
   this.instance = instance;\n\
   this.validators = [];\n\
 \n\
   Object.keys(options).forEach(function(name) {\n\
-    var fn, opts;\n\
-    if ((fn = _this[name]) && \"function\" === typeof _this[name]) {\n\
+    var fn = this[name],\n\
+        opts;\n\
+\n\
+    if (fn && 'function' === typeof fn) {\n\
       opts = Array.isArray(options[name]) ? options[name] : [options[name]];\n\
-      _this[name].apply(_this, opts);\n\
+      this[name].apply(this, opts);\n\
     }\n\
-  });\n\
+  }, this);\n\
 }\n\
+\n\
+/**\n\
+ * extend Type\n\
+ */\n\
+\n\
+SchemaType.prototype.__proto__ = Type.prototype;\n\
+\n\
+\n\
+/**\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = SchemaType;\n\
 \n\
 /**\n\
  * Add validator\n\
  * @param  {function} fn\n\
  * @param  {String}   error\n\
+ * @api public\n\
  */\n\
 \n\
 SchemaType.prototype.validate = function(obj, error) {\n\
@@ -4961,14 +5875,15 @@ SchemaType.prototype.validate = function(obj, error) {\n\
  * @param  {Object}   value\n\
  * @param  {Object}   scope\n\
  * @return {[Array]}\n\
+ * @api private\n\
  */\n\
 \n\
 SchemaType.prototype.doValidate = function(value, scope) {\n\
   if (!this.validators.length) return null;\n\
 \n\
-  var errs = null\n\
-    , path = this.path\n\
-    , validate = function(ok, msg, val) {\n\
+  var errs = null,\n\
+      path = this.path,\n\
+      validate = function(ok, msg, val) {\n\
         if (!ok) {\n\
           errs || (errs = []);\n\
           errs.push(new ValidatorError(path, msg, val));\n\
@@ -5002,18 +5917,6 @@ require.register("climongoose/lib/virtualType.js", Function("exports, require, m
 var Type = require('./type');\n\
 \n\
 /**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = VirtualType;\n\
-\n\
-/**\n\
- * extend Type\n\
- */\n\
-\n\
-VirtualType.prototype.__proto__ = Type.prototype;\n\
-\n\
-/**\n\
  * Constructor\n\
  *\n\
  * @param {String} key\n\
@@ -5024,19 +5927,26 @@ function VirtualType(name) {\n\
   Type.call(this, name);\n\
   this.instance = 'virtual';\n\
 }\n\
-//@ sourceURL=climongoose/lib/virtualType.js"
-));
-require.register("climongoose/lib/errors/index.js", Function("exports, require, module",
-"module.exports.ValidatorError = require('./validator');//@ sourceURL=climongoose/lib/errors/index.js"
-));
-require.register("climongoose/lib/errors/validator.js", Function("exports, require, module",
-"/**\n\
+\n\
+/**\n\
  * module exports\n\
  */\n\
 \n\
-module.exports = ValidatorError;\n\
+module.exports = VirtualType;\n\
 \n\
 /**\n\
+ * extend Type\n\
+ */\n\
+\n\
+VirtualType.prototype.__proto__ = Type.prototype;\n\
+//@ sourceURL=climongoose/lib/virtualType.js"
+));
+require.register("climongoose/lib/errors/index.js", Function("exports, require, module",
+"module.exports.ValidatorError = require('./validator');\n\
+module.exports.CastError = require('./cast');//@ sourceURL=climongoose/lib/errors/index.js"
+));
+require.register("climongoose/lib/errors/validator.js", Function("exports, require, module",
+"/**\n\
  * Validator error\n\
  * @param {String} path\n\
  * @param {String} type\n\
@@ -5045,10 +5955,10 @@ module.exports = ValidatorError;\n\
 \n\
 function ValidatorError(path, type, val) {\n\
   var msg;\n\
-  msg = type ? \"'\" + type + \"'\" : '';\n\
-  this.message = \"Validator \" + msg + \" failed for path \" + path;\n\
+  msg = type ? '\"' + type + '\"' : '';\n\
+  this.message = 'Validator ' + msg + ' failed for path ' + path;\n\
   if (2 < arguments.length) {\n\
-    this.message += \" with value \" + (String(val));\n\
+    this.message += ' with value ' + (String(val));\n\
   }\n\
   Error.call(this);\n\
   this.name = 'ValidatorError';\n\
@@ -5057,45 +5967,109 @@ function ValidatorError(path, type, val) {\n\
   this.value = val;\n\
 }\n\
 \n\
-/**\n\
+/*!\n\
  * extend Error\n\
  */\n\
 \n\
 ValidatorError.prototype.__proto__ = Error.prototype;\n\
-//@ sourceURL=climongoose/lib/errors/validator.js"
-));
-require.register("climongoose/lib/schema/index.js", Function("exports, require, module",
-"/**\n\
+\n\
+/*!\n\
  * module exports\n\
  */\n\
 \n\
-module.exports.String = require('./string');\n\
-module.exports.ObjectId = require('./objectid');\n\
-module.exports.Number = require('./number');\n\
-module.exports.Boolean = require('./boolean');\n\
-module.exports.Date = require('./date');\n\
-module.exports.DocumentArray = require('./documentarray');\n\
+module.exports = ValidatorError;\n\
+//@ sourceURL=climongoose/lib/errors/validator.js"
+));
+require.register("climongoose/lib/errors/cast.js", Function("exports, require, module",
+"/**\n\
+ * Cast error\n\
+ *\n\
+ * @param {String} path\n\
+ * @param {String} type\n\
+ * @param {Object} val\n\
+ */\n\
+\n\
+function CastError(path, type, val) {\n\
+  var msg;\n\
+  msg = type ? '\"' + type + '\"' : '';\n\
+  this.message = 'Cast ' + msg + ' failed for path ' + path;\n\
+  if (2 < arguments.length) this.message += ' with value ' + (String(val));\n\
+\n\
+  Error.call(this);\n\
+  this.name = 'CastError';\n\
+  this.path = path;\n\
+  this.type = type;\n\
+  this.value = val;\n\
+}\n\
+\n\
+/*!\n\
+ * extend Error\n\
+ */\n\
+\n\
+CastError.prototype.__proto__ = Error.prototype;\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = CastError;\n\
+//@ sourceURL=climongoose/lib/errors/cast.js"
+));
+require.register("climongoose/lib/schema/index.js", Function("exports, require, module",
+"/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+var types = {\n\
+  String: require('./string'),\n\
+  ObjectId: require('./objectid'),\n\
+  Number: require('./number'),\n\
+  Boolean: require('./boolean'),\n\
+  Date: require('./date'),\n\
+  DocumentArray: require('./documentarray')\n\
+};\n\
+\n\
+module.exports = types;\n\
+\n\
+/**\n\
+ * get Schema Type from Schema definition\n\
+ *\n\
+ * Example:\n\
+ *   foo: {type: String} -> StringType\n\
+ *   foo: {type: 'String'} -> StringType\n\
+ *   foo: String -> StringType\n\
+ *\n\
+ * @param  {Type} type\n\
+ * @return {SchemaType}\n\
+ * @api private\n\
+ */\n\
+\n\
+module.exports.getSchemaType = function getType (type) {\n\
+\n\
+  var name = 'string' === typeof type\n\
+    ? type\n\
+    : type.name;\n\
+\n\
+  return types[name];\n\
+};\n\
+\n\
+/*!\n\
+ * expose it to DocumentArray\n\
+ * to let it create\n\
+ */\n\
+\n\
+types.DocumentArray.getSchemaType = module.exports.getSchemaType;\n\
 \n\
 //@ sourceURL=climongoose/lib/schema/index.js"
 ));
 require.register("climongoose/lib/schema/date.js", Function("exports, require, module",
-"/**\n\
+"/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
-\n\
-/**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = DateType;\n\
-\n\
-/**\n\
- * extend SchemaType\n\
- */\n\
-\n\
-DateType.prototype.__proto__ = SchemaType.prototype;\n\
+var SchemaType = require('../schemaType'),\n\
+    Errors = require('../errors'),\n\
+    CastError = Errors.CastError;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -5107,26 +6081,55 @@ DateType.prototype.__proto__ = SchemaType.prototype;\n\
 function DateType(key, options) {\n\
   SchemaType.call(this, key, options, 'Date');\n\
 }\n\
+\n\
+/*!\n\
+ * extend SchemaType\n\
+ */\n\
+\n\
+DateType.prototype.__proto__ = SchemaType.prototype;\n\
+\n\
+/**\n\
+ * Casts to date\n\
+ *\n\
+ * @param {Object} value to cast\n\
+ * @api private\n\
+ */\n\
+\n\
+DateType.prototype.cast = function (value) {\n\
+  if (value === null || value === '') return null;\n\
+  if (value instanceof Date) return value;\n\
+\n\
+  var date;\n\
+\n\
+  // support for timestamps\n\
+  if (value instanceof Number\n\
+      || 'number' === typeof value\n\
+      || String(value) === Number(value)) {\n\
+    date = new Date(Number(value));\n\
+  }\n\
+\n\
+  // support for date strings\n\
+  else if (value.toString) {\n\
+    date = new Date(value.toString());\n\
+  }\n\
+\n\
+  if (date.toString() !== 'Invalid Date') return date;\n\
+  throw new CastError(this.path, 'date', value);\n\
+};\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = DateType;\n\
 //@ sourceURL=climongoose/lib/schema/date.js"
 ));
 require.register("climongoose/lib/schema/boolean.js", Function("exports, require, module",
-"/**\n\
+"/*!\n\
  * module dependencies\n\
  */\n\
 \n\
 var SchemaType = require('../schemaType');\n\
-\n\
-/**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = BooleanType;\n\
-\n\
-/**\n\
- * extend SchemaType\n\
- */\n\
-\n\
-BooleanType.prototype.__proto__ = SchemaType.prototype;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -5138,26 +6141,43 @@ BooleanType.prototype.__proto__ = SchemaType.prototype;\n\
 function BooleanType(key, options) {\n\
   SchemaType.call(this, key, options, 'Boolean');\n\
 }\n\
-//@ sourceURL=climongoose/lib/schema/boolean.js"
-));
-require.register("climongoose/lib/schema/number.js", Function("exports, require, module",
-"/**\n\
- * module dependencies\n\
- */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
-\n\
-/**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = NumberType;\n\
-\n\
-/**\n\
+/*!\n\
  * extend SchemaType\n\
  */\n\
 \n\
-NumberType.prototype.__proto__ = SchemaType.prototype;\n\
+BooleanType.prototype.__proto__ = SchemaType.prototype;\n\
+\n\
+/**\n\
+ * Casts to boolean\n\
+ *\n\
+ * @param {Object} value\n\
+ * @api private\n\
+ */\n\
+\n\
+BooleanType.prototype.cast = function (value) {\n\
+  if (null === value) return value;\n\
+  if ('0' === value) return false;\n\
+  if ('true' === value) return true;\n\
+  if ('false' === value) return false;\n\
+  return !! value;\n\
+};\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = BooleanType;\n\
+//@ sourceURL=climongoose/lib/schema/boolean.js"
+));
+require.register("climongoose/lib/schema/number.js", Function("exports, require, module",
+"/*!\n\
+ * module dependencies\n\
+ */\n\
+\n\
+var SchemaType = require('../schemaType'),\n\
+    Errors = require('../errors'),\n\
+    CastError = Errors.CastError;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -5170,9 +6190,23 @@ function NumberType(key, options) {\n\
   SchemaType.call(this, key, options, 'Number');\n\
 }\n\
 \n\
+/*!\n\
+ * extend SchemaType\n\
+ */\n\
+\n\
+NumberType.prototype.__proto__ = SchemaType.prototype;\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = NumberType;\n\
+\n\
 /**\n\
  * min validator\n\
+ *\n\
  * @param  {Number} val\n\
+ * @api public\n\
  */\n\
 \n\
 NumberType.prototype.min = function(val) {\n\
@@ -5185,7 +6219,9 @@ NumberType.prototype.min = function(val) {\n\
 \n\
 /**\n\
  * max validator\n\
+ *\n\
  * @param  {Number} val\n\
+ * @api public\n\
  */\n\
 \n\
 NumberType.prototype.max = function(val) {\n\
@@ -5194,26 +6230,35 @@ NumberType.prototype.max = function(val) {\n\
     return v <= val;\n\
   };\n\
   return this.validators.push([check, 'max']);\n\
+};\n\
+\n\
+/**\n\
+ * Casts to number\n\
+ *\n\
+ * @param {Object} value value to cast\n\
+ * @api private\n\
+ */\n\
+\n\
+NumberType.prototype.cast = function (value) {\n\
+  if (!isNaN(value)){\n\
+    if (null === value) return value;\n\
+    if ('' === value) return null;\n\
+    if ('string' === typeof value) value = Number(value);\n\
+    if (value instanceof Number) return value;\n\
+    if ('number' === typeof value) return value;\n\
+  }\n\
+\n\
+  throw new CastError(this.path, 'number', value);\n\
 };//@ sourceURL=climongoose/lib/schema/number.js"
 ));
 require.register("climongoose/lib/schema/string.js", Function("exports, require, module",
-"/**\n\
+"/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
-\n\
-/**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = StringType;\n\
-\n\
-/**\n\
- * extend SchemaType\n\
- */\n\
-\n\
-StringType.prototype.__proto__ = SchemaType.prototype;\n\
+var SchemaType = require('../schemaType'),\n\
+    Errors = require('../errors'),\n\
+    CastError = Errors.CastError;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -5227,10 +6272,23 @@ function StringType(key, options) {\n\
   SchemaType.call(this, key, options, 'String');\n\
 }\n\
 \n\
+/*!\n\
+ * extend SchemaType\n\
+ */\n\
+\n\
+StringType.prototype.__proto__ = SchemaType.prototype;\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = StringType;\n\
+\n\
 /**\n\
  * match validator\n\
  *\n\
  * @param  {Regexp} regExp\n\
+ * @api public\n\
  */\n\
 \n\
 StringType.prototype.match = function(regExp) {\n\
@@ -5245,37 +6303,37 @@ StringType.prototype.match = function(regExp) {\n\
  * enum validator\n\
  *\n\
  * @param  {Array} values\n\
+ * @api public\n\
  */\n\
 \n\
 StringType.prototype.enum = function() {\n\
-  var values = [].slice.apply(arguments)\n\
-    , check = function(v) {\n\
+  var values = [].slice.apply(arguments),\n\
+      check = function(v) {\n\
         if (!v) return true;\n\
         return (values.indexOf(v) === -1) ? false: true;\n\
       };\n\
   this.validators.push([check, 'enum']);\n\
 };\n\
 \n\
-//@ sourceURL=climongoose/lib/schema/string.js"
+/**\n\
+ * Casts to String\n\
+ *\n\
+ * @param {Object} value value to cast\n\
+ * @api private\n\
+ */\n\
+\n\
+StringType.prototype.cast = function (value) {\n\
+  if (!value) return value;\n\
+  if (value.toString) return value.toString();\n\
+  throw new CastError(this.path, 'string', value);\n\
+};//@ sourceURL=climongoose/lib/schema/string.js"
 ));
 require.register("climongoose/lib/schema/objectid.js", Function("exports, require, module",
-"/**\n\
+"/*!\n\
  * module dependencies\n\
  */\n\
 \n\
 var SchemaType = require('../schemaType');\n\
-\n\
-/**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = ObjectId;\n\
-\n\
-/**\n\
- * extend SchemaType\n\
- */\n\
-\n\
-ObjectId.prototype.__proto__ = SchemaType.prototype;\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -5287,26 +6345,28 @@ ObjectId.prototype.__proto__ = SchemaType.prototype;\n\
 function ObjectId(key, options) {\n\
   SchemaType.call(this, key, options, 'ObjectId');\n\
 }\n\
-//@ sourceURL=climongoose/lib/schema/objectid.js"
-));
-require.register("climongoose/lib/schema/documentarray.js", Function("exports, require, module",
-"/**\n\
- * module dependencies\n\
- */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
-\n\
-/**\n\
- * module exports\n\
- */\n\
-\n\
-module.exports = DocumentArray;\n\
-\n\
-/**\n\
+/*!\n\
  * extend SchemaType\n\
  */\n\
 \n\
-DocumentArray.prototype.__proto__ = SchemaType.prototype;\n\
+ObjectId.prototype.__proto__ = SchemaType.prototype;\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = ObjectId;\n\
+\n\
+//@ sourceURL=climongoose/lib/schema/objectid.js"
+));
+require.register("climongoose/lib/schema/documentarray.js", Function("exports, require, module",
+"/*!\n\
+ * module dependencies\n\
+ */\n\
+\n\
+var SchemaType = require('../schemaType'),\n\
+    ModelArray = require('modelarray');\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -5316,12 +6376,109 @@ DocumentArray.prototype.__proto__ = SchemaType.prototype;\n\
  */\n\
 \n\
 function DocumentArray(key, options) {\n\
-  SchemaType.call(this, key, options, 'Date');\n\
+\n\
+  // get SubDocument Schema\n\
+  var schema = Array.isArray(options)\n\
+             ? options[0]\n\
+             : options.type[0],\n\
+      type;\n\
+\n\
+\n\
+  // document array class\n\
+  this.DocArray = function DocArray(values) {\n\
+    return ModelArray.call(this, values);\n\
+  };\n\
+\n\
+  // inherit ModelArray\n\
+  this.DocArray.prototype.__proto__ = ModelArray.prototype;\n\
+\n\
+  // if we have a schema generate Array models\n\
+  if (schema.constructor.name === 'Schema' ||\n\
+      schema.constructor.name === 'Object') {\n\
+    this.DocArray.prototype.model = DocumentArray.model(schema);\n\
+\n\
+  // else override modelArray_cast with type#cast\n\
+  } else {\n\
+    type = DocumentArray.getSchemaType(schema);\n\
+    this.DocArray.prototype._cast = function (value) {\n\
+      return type.prototype.cast.call(this, value);\n\
+    };\n\
+  }\n\
+\n\
+  SchemaType.call(this, key, options, 'DocumentArray');\n\
 }\n\
+\n\
+/*!\n\
+ * extend SchemaType\n\
+ */\n\
+\n\
+DocumentArray.prototype.__proto__ = SchemaType.prototype;\n\
+\n\
+/**\n\
+ * Casts contents\n\
+ *\n\
+ * @param {Object} value\n\
+ * @param {Document} doc document that triggers the casting\n\
+ * @param {Boolean} init whether this is an initialization cast\n\
+ * @api private\n\
+ */\n\
+\n\
+DocumentArray.prototype.cast = function (value) {\n\
+  if (value instanceof this.DocArray) return value;\n\
+  if (value && !Array.isArray(value)) value = [value];\n\
+  return new this.DocArray(value);\n\
+};\n\
+\n\
+/**\n\
+ * Validate Schema\n\
+ *\n\
+ * @override SchemaType#doValidate\n\
+ * @api public\n\
+ */\n\
+\n\
+DocumentArray.prototype.doValidate = function (array) {\n\
+\n\
+  // validate self first\n\
+  var errs = SchemaType.prototype.doValidate.apply(this, arguments);\n\
+\n\
+  if (errs) return errs;\n\
+  if (!array) return;\n\
+  if (!this.SubDocument) return;\n\
+\n\
+  // validate items\n\
+  array.forEach(function (model) {\n\
+    var modelErrs = model.validate();\n\
+    if (modelErrs) {\n\
+      errs || (errs = []);\n\
+      errs.concat(modelErrs);\n\
+    }\n\
+  });\n\
+\n\
+  return errs;\n\
+};\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = DocumentArray;\n\
 //@ sourceURL=climongoose/lib/schema/documentarray.js"
 ));
 
 
+
+
+require.alias("component-emitter/index.js", "climongoose/deps/emitter/index.js");
+require.alias("component-emitter/index.js", "emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
+
+require.alias("pgherveou-modelarray/index.js", "climongoose/deps/modelarray/index.js");
+require.alias("pgherveou-modelarray/index.js", "climongoose/deps/modelarray/index.js");
+require.alias("pgherveou-modelarray/index.js", "modelarray/index.js");
+require.alias("component-emitter/index.js", "pgherveou-modelarray/deps/emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
+
+require.alias("pgherveou-modelarray/index.js", "pgherveou-modelarray/index.js");
 require.alias("chaijs-chai/index.js", "climongoose/deps/chai/index.js");
 require.alias("chaijs-chai/lib/chai.js", "climongoose/deps/chai/lib/chai.js");
 require.alias("chaijs-chai/lib/chai/assertion.js", "climongoose/deps/chai/lib/chai/assertion.js");

@@ -1,0 +1,6 @@
+--growl
+--check-leaks
+--reporter spec
+--colors
+--bail
+test/index.js
