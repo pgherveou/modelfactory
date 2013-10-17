@@ -3,7 +3,7 @@
   Data models with schema definition, and event propagation inspired from Mongoose & Backbone.js
 
 # Example
-  
+
   ```js
 var climongoose = require('climongoose');
 
@@ -58,7 +58,7 @@ var user = new User({
 // events are emitted on ppty change
 user.on('change:email', function() {/* do something when email change */});
 user.email = 'johny@gmail.com'
-user.set('email',  'johny2@gmail.com', {silent: true}) // or silent it 
+user.set('email',  'johny2@gmail.com', {silent: true}) // or silent it
 
 // work for nested properties as well
 user.on('change:name.first', function() {/* do something when firstname change */});
@@ -83,9 +83,7 @@ console.log(user.validate()); // KO
 
 ## supported browsers
 
-should work on any browser supporting Object.defineProperty
-https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
-
+should work on any browser supporting [Object.defineProperty](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)
 
 ## License
 

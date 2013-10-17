@@ -1,4 +1,10 @@
 
+0.1.1 / 2013-10-17
+==================
+
+  * Update Readme.md
+  * add parent and parentArray methods on model
+
 0.1.0 / 2013-10-17
 ==================
 
