@@ -1,6 +1,6 @@
 # climongoose
 
-  Data models with schema definition, and event propagation inspired from Mongoose & Backbone.js
+  Data models with schema definition, and event propagation inspired by Mongoose & Backbone.js
 
 ## Installation
 
