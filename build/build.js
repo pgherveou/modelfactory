@@ -5295,10 +5295,14 @@ Model.prototype.set = function (key, val, opts) {\n\
 \n\
     // trigger events\n\
     if (!silent) {\n\
-      this.emit('change:' + key, this.get(key), this);\n\
-      parts = key.split('.');\n\
+\n\
+      // key event\n\
+      if (this.hasListeners('change:' + key)) {\n\
+        changedPaths['change:' + key] = this.get(key);\n\
+      }\n\
 \n\
       // prepare subpath events\n\
+      parts = key.split('.');\n\
       while(parts.length) {\n\
         parts.pop();\n\
         path = parts.join('.');\n\
@@ -5310,13 +5314,22 @@ Model.prototype.set = function (key, val, opts) {\n\
     }\n\
   }, this);\n\
 \n\
-  // emit subpath events\n\
+  // emit events\n\
   if (!silent) {\n\
     Object\n\
       .keys(changedPaths)\n\
       .forEach(function (ev) {\n\
+\n\
+        // emit doc event\n\
         this.emit(ev, changedPaths[ev], this);\n\
+\n\
+        // proxy event on parentArray\n\
+        if (this._parentArray && this._parentArray.hasListeners(ev)) {\n\
+          this._parentArray.emit(ev, changedPaths[ev], this, this._parentArray);\n\
+        }\n\
+\n\
       }, this);\n\
+\n\
   }\n\
 \n\
   return this;\n\

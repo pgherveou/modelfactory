@@ -343,6 +343,21 @@ describe('climongoose specs', function() {
     expect(user.one.two.tree).to.eq(false);
   });
 
+  it ('should set and proxy event to parentArray', function () {
+    var project = user.projects[0];
+
+    user.projects.on('change:name', function () {
+      emit++;
+    });
+
+    project.on('change:name', function () {
+      emit++;
+    });
+
+    project.name = 'other';
+    expect(emit).to.eq(2);
+  });
+
   it('should use virtual method getter', function() {
     expect(user.name.full).to.eq('john Mcenroe');
   });
