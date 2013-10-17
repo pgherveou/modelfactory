@@ -2,6 +2,17 @@
 
   Data models with schema definition, and event propagation inspired from Mongoose & Backbone.js
 
+## Installation
+
+  Install with [component](http://component.io):
+
+    $ component install pgherveou/climongoose
+
+  Install with [npm](http://npmjs.org):
+
+    $ npm install climongoose
+
+
 ## Example
 
   ```js
@@ -77,17 +88,6 @@ console.log(user.validate()); // KO
 ## API
 
   coming soon..
-
-## Installation
-
-  Install with [component](http://component.io):
-
-    $ component install pgherveou/climongoose
-
-  Install with [npm](http://npmjs.org):
-
-    $ npm install climongoose
-
 
 ## supported browsers
 
