@@ -1,13 +1,24 @@
 # modelfactory
 
-  Data models with schema definition, and event propagation inspired from Mongoose & Backbone.js
+  Data models with schema definition, and event propagation inspired by Mongoose & Backbone.js
 
-# Example
+## Installation
+
+  Install with [component](http://component.io):
+
+    $ component install pgherveou/modelfactory
+
+  Install with [npm](http://npmjs.org):
+
+    $ npm install modelfactory
+
+## Example
 
   ```js
 var modelfactory = require('modelfactory');
 
 // create a User Model
+
 var User = modelfactory.model({
   email: {type: String, required: true, match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/},
   age: {type: Number, min: 13},
@@ -55,6 +66,12 @@ var user = new User({
   ]
 });
 
+// data are casted according to their type
+user.age = "56"
+user.age === 56 // true
+user.date = 'oct-2013'
+user.date instanceof Date // true
+
 // events are emitted on ppty change
 user.on('change:email', function() {/* do something when email change */});
 user.email = 'johny@gmail.com'
@@ -65,21 +82,17 @@ user.on('change:name.first', function() {/* do something when firstname change *
 user.on('change:name', function() {/* do something when name change */});
 user.name.first = 'johny'
 
+// or embedded arrays
+user.trophees.on('add', function() {/* do something with added trophee */});
+user.trophees.on('change:name', function() {/* do something when a trophee name change */});
+
 // validation use schema rules
 user.email = "johnyatgmail.com";
 console.log(user.validate()); // KO
   ```
 
-## Installation
-
-  Install with [component](http://component.io):
-
-    $ component install pgherveou/modelfactory
-
-  Install with [npm](http://npmjs.org):
-
-    $ npm install modelfactory
-
+## API
+  coming soon..
 
 ## supported browsers
 
@@ -87,8 +100,8 @@ should work on any browser supporting [Object.defineProperty](https://developer.
 
 # Credits
 
-  - mongoosejs.com
-  - backbonejs.org
+  - [Mongoose](mongoosejs.com)
+  - [Backbone](backbonejs.org)
 
 ## License
 
