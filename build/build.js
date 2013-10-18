@@ -4958,7 +4958,7 @@ module.exports = function(runner){\n\
   });\n\
 };//@ sourceURL=visionmedia-mocha-cloud/client.js"
 ));
-require.register("climongoose/lib/index.js", Function("exports, require, module",
+require.register("modelfactory/lib/index.js", Function("exports, require, module",
 "\n\
 /*!\n\
  * deps\n\
@@ -5116,9 +5116,9 @@ module.exports.model = function (schema) {\n\
  */\n\
 \n\
 require('./schema/documentarray').model = module.exports.model;\n\
-//@ sourceURL=climongoose/lib/index.js"
+//@ sourceURL=modelfactory/lib/index.js"
 ));
-require.register("climongoose/lib/model.js", Function("exports, require, module",
+require.register("modelfactory/lib/model.js", Function("exports, require, module",
 "var Emitter = require('emitter'),\n\
     utils = require('./utils'),\n\
     globals = require('./globals'),\n\
@@ -5406,9 +5406,9 @@ Model.prototype.validate = function (doc, opts) {\n\
 Model.prototype.toJSON = function () {\n\
   return this._doc;\n\
 };\n\
-//@ sourceURL=climongoose/lib/model.js"
+//@ sourceURL=modelfactory/lib/model.js"
 ));
-require.register("climongoose/lib/utils.js", Function("exports, require, module",
+require.register("modelfactory/lib/utils.js", Function("exports, require, module",
 "/**\n\
  * get nested property\n\
  * @param  {Object} obj\n\
@@ -5469,12 +5469,12 @@ module.exports.setPath = function setPath(obj, path, val) {\n\
 \n\
   if (obj) obj[last] = val;\n\
 };\n\
-//@ sourceURL=climongoose/lib/utils.js"
+//@ sourceURL=modelfactory/lib/utils.js"
 ));
-require.register("climongoose/lib/globals.js", Function("exports, require, module",
-"module.exports.idAttribute = '_id';//@ sourceURL=climongoose/lib/globals.js"
+require.register("modelfactory/lib/globals.js", Function("exports, require, module",
+"module.exports.idAttribute = '_id';//@ sourceURL=modelfactory/lib/globals.js"
 ));
-require.register("climongoose/lib/schema.js", Function("exports, require, module",
+require.register("modelfactory/lib/schema.js", Function("exports, require, module",
 "\n\
 /**\n\
  * module dependencies\n\
@@ -5701,9 +5701,9 @@ Schema.prototype.static = function(name, fn) {\n\
     this.statics[name] = fn;\n\
   }\n\
   return this;\n\
-};//@ sourceURL=climongoose/lib/schema.js"
+};//@ sourceURL=modelfactory/lib/schema.js"
 ));
-require.register("climongoose/lib/type.js", Function("exports, require, module",
+require.register("modelfactory/lib/type.js", Function("exports, require, module",
 "/**\n\
  * Type constructor\n\
  *\n\
@@ -5832,9 +5832,9 @@ Type.prototype.getDefault = function (scope) {\n\
   return ret;\n\
 };\n\
 \n\
-//@ sourceURL=climongoose/lib/type.js"
+//@ sourceURL=modelfactory/lib/type.js"
 ));
-require.register("climongoose/lib/schemaType.js", Function("exports, require, module",
+require.register("modelfactory/lib/schemaType.js", Function("exports, require, module",
 "/**\n\
  * module deps\n\
  */\n\
@@ -5930,9 +5930,9 @@ SchemaType.prototype.required = function() {\n\
   return this.validators.push([check, 'required']);\n\
 };\n\
 \n\
-//@ sourceURL=climongoose/lib/schemaType.js"
+//@ sourceURL=modelfactory/lib/schemaType.js"
 ));
-require.register("climongoose/lib/virtualType.js", Function("exports, require, module",
+require.register("modelfactory/lib/virtualType.js", Function("exports, require, module",
 "/**\n\
  * module dependencies\n\
  */\n\
@@ -5962,13 +5962,13 @@ module.exports = VirtualType;\n\
  */\n\
 \n\
 VirtualType.prototype.__proto__ = Type.prototype;\n\
-//@ sourceURL=climongoose/lib/virtualType.js"
+//@ sourceURL=modelfactory/lib/virtualType.js"
 ));
-require.register("climongoose/lib/errors/index.js", Function("exports, require, module",
+require.register("modelfactory/lib/errors/index.js", Function("exports, require, module",
 "module.exports.ValidatorError = require('./validator');\n\
-module.exports.CastError = require('./cast');//@ sourceURL=climongoose/lib/errors/index.js"
+module.exports.CastError = require('./cast');//@ sourceURL=modelfactory/lib/errors/index.js"
 ));
-require.register("climongoose/lib/errors/validator.js", Function("exports, require, module",
+require.register("modelfactory/lib/errors/validator.js", Function("exports, require, module",
 "/**\n\
  * Validator error\n\
  * @param {String} path\n\
@@ -6001,9 +6001,9 @@ ValidatorError.prototype.__proto__ = Error.prototype;\n\
  */\n\
 \n\
 module.exports = ValidatorError;\n\
-//@ sourceURL=climongoose/lib/errors/validator.js"
+//@ sourceURL=modelfactory/lib/errors/validator.js"
 ));
-require.register("climongoose/lib/errors/cast.js", Function("exports, require, module",
+require.register("modelfactory/lib/errors/cast.js", Function("exports, require, module",
 "/**\n\
  * Cast error\n\
  *\n\
@@ -6036,9 +6036,9 @@ CastError.prototype.__proto__ = Error.prototype;\n\
  */\n\
 \n\
 module.exports = CastError;\n\
-//@ sourceURL=climongoose/lib/errors/cast.js"
+//@ sourceURL=modelfactory/lib/errors/cast.js"
 ));
-require.register("climongoose/lib/schema/index.js", Function("exports, require, module",
+require.register("modelfactory/lib/schema/index.js", Function("exports, require, module",
 "/*!\n\
  * module exports\n\
  */\n\
@@ -6083,9 +6083,9 @@ module.exports.getSchemaType = function getType (type) {\n\
 \n\
 types.DocumentArray.getSchemaType = module.exports.getSchemaType;\n\
 \n\
-//@ sourceURL=climongoose/lib/schema/index.js"
+//@ sourceURL=modelfactory/lib/schema/index.js"
 ));
-require.register("climongoose/lib/schema/date.js", Function("exports, require, module",
+require.register("modelfactory/lib/schema/date.js", Function("exports, require, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
@@ -6145,9 +6145,9 @@ DateType.prototype.cast = function (value) {\n\
  */\n\
 \n\
 module.exports = DateType;\n\
-//@ sourceURL=climongoose/lib/schema/date.js"
+//@ sourceURL=modelfactory/lib/schema/date.js"
 ));
-require.register("climongoose/lib/schema/boolean.js", Function("exports, require, module",
+require.register("modelfactory/lib/schema/boolean.js", Function("exports, require, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
@@ -6191,9 +6191,9 @@ BooleanType.prototype.cast = function (value) {\n\
  */\n\
 \n\
 module.exports = BooleanType;\n\
-//@ sourceURL=climongoose/lib/schema/boolean.js"
+//@ sourceURL=modelfactory/lib/schema/boolean.js"
 ));
-require.register("climongoose/lib/schema/number.js", Function("exports, require, module",
+require.register("modelfactory/lib/schema/number.js", Function("exports, require, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
@@ -6272,9 +6272,9 @@ NumberType.prototype.cast = function (value) {\n\
   }\n\
 \n\
   throw new CastError(this.path, 'number', value);\n\
-};//@ sourceURL=climongoose/lib/schema/number.js"
+};//@ sourceURL=modelfactory/lib/schema/number.js"
 ));
-require.register("climongoose/lib/schema/string.js", Function("exports, require, module",
+require.register("modelfactory/lib/schema/string.js", Function("exports, require, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
@@ -6349,9 +6349,9 @@ StringType.prototype.cast = function (value) {\n\
   if (!value) return value;\n\
   if (value.toString) return value.toString();\n\
   throw new CastError(this.path, 'string', value);\n\
-};//@ sourceURL=climongoose/lib/schema/string.js"
+};//@ sourceURL=modelfactory/lib/schema/string.js"
 ));
-require.register("climongoose/lib/schema/objectid.js", Function("exports, require, module",
+require.register("modelfactory/lib/schema/objectid.js", Function("exports, require, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
@@ -6381,9 +6381,9 @@ ObjectId.prototype.__proto__ = SchemaType.prototype;\n\
 \n\
 module.exports = ObjectId;\n\
 \n\
-//@ sourceURL=climongoose/lib/schema/objectid.js"
+//@ sourceURL=modelfactory/lib/schema/objectid.js"
 ));
-require.register("climongoose/lib/schema/documentarray.js", Function("exports, require, module",
+require.register("modelfactory/lib/schema/documentarray.js", Function("exports, require, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
@@ -6492,57 +6492,57 @@ DocumentArray.prototype.doValidate = function (array) {\n\
  */\n\
 \n\
 module.exports = DocumentArray;\n\
-//@ sourceURL=climongoose/lib/schema/documentarray.js"
+//@ sourceURL=modelfactory/lib/schema/documentarray.js"
 ));
 
 
 
 
-require.alias("component-emitter/index.js", "climongoose/deps/emitter/index.js");
+require.alias("component-emitter/index.js", "modelfactory/deps/emitter/index.js");
 require.alias("component-emitter/index.js", "emitter/index.js");
 require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
 
-require.alias("pgherveou-modelarray/index.js", "climongoose/deps/modelarray/index.js");
-require.alias("pgherveou-modelarray/index.js", "climongoose/deps/modelarray/index.js");
+require.alias("pgherveou-modelarray/index.js", "modelfactory/deps/modelarray/index.js");
+require.alias("pgherveou-modelarray/index.js", "modelfactory/deps/modelarray/index.js");
 require.alias("pgherveou-modelarray/index.js", "modelarray/index.js");
 require.alias("component-emitter/index.js", "pgherveou-modelarray/deps/emitter/index.js");
 require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
 
 require.alias("pgherveou-modelarray/index.js", "pgherveou-modelarray/index.js");
-require.alias("chaijs-chai/index.js", "climongoose/deps/chai/index.js");
-require.alias("chaijs-chai/lib/chai.js", "climongoose/deps/chai/lib/chai.js");
-require.alias("chaijs-chai/lib/chai/assertion.js", "climongoose/deps/chai/lib/chai/assertion.js");
-require.alias("chaijs-chai/lib/chai/core/assertions.js", "climongoose/deps/chai/lib/chai/core/assertions.js");
-require.alias("chaijs-chai/lib/chai/interface/assert.js", "climongoose/deps/chai/lib/chai/interface/assert.js");
-require.alias("chaijs-chai/lib/chai/interface/expect.js", "climongoose/deps/chai/lib/chai/interface/expect.js");
-require.alias("chaijs-chai/lib/chai/interface/should.js", "climongoose/deps/chai/lib/chai/interface/should.js");
-require.alias("chaijs-chai/lib/chai/utils/addChainableMethod.js", "climongoose/deps/chai/lib/chai/utils/addChainableMethod.js");
-require.alias("chaijs-chai/lib/chai/utils/addMethod.js", "climongoose/deps/chai/lib/chai/utils/addMethod.js");
-require.alias("chaijs-chai/lib/chai/utils/addProperty.js", "climongoose/deps/chai/lib/chai/utils/addProperty.js");
-require.alias("chaijs-chai/lib/chai/utils/eql.js", "climongoose/deps/chai/lib/chai/utils/eql.js");
-require.alias("chaijs-chai/lib/chai/utils/flag.js", "climongoose/deps/chai/lib/chai/utils/flag.js");
-require.alias("chaijs-chai/lib/chai/utils/getActual.js", "climongoose/deps/chai/lib/chai/utils/getActual.js");
-require.alias("chaijs-chai/lib/chai/utils/getEnumerableProperties.js", "climongoose/deps/chai/lib/chai/utils/getEnumerableProperties.js");
-require.alias("chaijs-chai/lib/chai/utils/getMessage.js", "climongoose/deps/chai/lib/chai/utils/getMessage.js");
-require.alias("chaijs-chai/lib/chai/utils/getName.js", "climongoose/deps/chai/lib/chai/utils/getName.js");
-require.alias("chaijs-chai/lib/chai/utils/getPathValue.js", "climongoose/deps/chai/lib/chai/utils/getPathValue.js");
-require.alias("chaijs-chai/lib/chai/utils/getProperties.js", "climongoose/deps/chai/lib/chai/utils/getProperties.js");
-require.alias("chaijs-chai/lib/chai/utils/index.js", "climongoose/deps/chai/lib/chai/utils/index.js");
-require.alias("chaijs-chai/lib/chai/utils/inspect.js", "climongoose/deps/chai/lib/chai/utils/inspect.js");
-require.alias("chaijs-chai/lib/chai/utils/objDisplay.js", "climongoose/deps/chai/lib/chai/utils/objDisplay.js");
-require.alias("chaijs-chai/lib/chai/utils/overwriteMethod.js", "climongoose/deps/chai/lib/chai/utils/overwriteMethod.js");
-require.alias("chaijs-chai/lib/chai/utils/overwriteProperty.js", "climongoose/deps/chai/lib/chai/utils/overwriteProperty.js");
-require.alias("chaijs-chai/lib/chai/utils/test.js", "climongoose/deps/chai/lib/chai/utils/test.js");
-require.alias("chaijs-chai/lib/chai/utils/transferFlags.js", "climongoose/deps/chai/lib/chai/utils/transferFlags.js");
-require.alias("chaijs-chai/lib/chai/utils/type.js", "climongoose/deps/chai/lib/chai/utils/type.js");
-require.alias("chaijs-chai/index.js", "climongoose/deps/chai/index.js");
+require.alias("chaijs-chai/index.js", "modelfactory/deps/chai/index.js");
+require.alias("chaijs-chai/lib/chai.js", "modelfactory/deps/chai/lib/chai.js");
+require.alias("chaijs-chai/lib/chai/assertion.js", "modelfactory/deps/chai/lib/chai/assertion.js");
+require.alias("chaijs-chai/lib/chai/core/assertions.js", "modelfactory/deps/chai/lib/chai/core/assertions.js");
+require.alias("chaijs-chai/lib/chai/interface/assert.js", "modelfactory/deps/chai/lib/chai/interface/assert.js");
+require.alias("chaijs-chai/lib/chai/interface/expect.js", "modelfactory/deps/chai/lib/chai/interface/expect.js");
+require.alias("chaijs-chai/lib/chai/interface/should.js", "modelfactory/deps/chai/lib/chai/interface/should.js");
+require.alias("chaijs-chai/lib/chai/utils/addChainableMethod.js", "modelfactory/deps/chai/lib/chai/utils/addChainableMethod.js");
+require.alias("chaijs-chai/lib/chai/utils/addMethod.js", "modelfactory/deps/chai/lib/chai/utils/addMethod.js");
+require.alias("chaijs-chai/lib/chai/utils/addProperty.js", "modelfactory/deps/chai/lib/chai/utils/addProperty.js");
+require.alias("chaijs-chai/lib/chai/utils/eql.js", "modelfactory/deps/chai/lib/chai/utils/eql.js");
+require.alias("chaijs-chai/lib/chai/utils/flag.js", "modelfactory/deps/chai/lib/chai/utils/flag.js");
+require.alias("chaijs-chai/lib/chai/utils/getActual.js", "modelfactory/deps/chai/lib/chai/utils/getActual.js");
+require.alias("chaijs-chai/lib/chai/utils/getEnumerableProperties.js", "modelfactory/deps/chai/lib/chai/utils/getEnumerableProperties.js");
+require.alias("chaijs-chai/lib/chai/utils/getMessage.js", "modelfactory/deps/chai/lib/chai/utils/getMessage.js");
+require.alias("chaijs-chai/lib/chai/utils/getName.js", "modelfactory/deps/chai/lib/chai/utils/getName.js");
+require.alias("chaijs-chai/lib/chai/utils/getPathValue.js", "modelfactory/deps/chai/lib/chai/utils/getPathValue.js");
+require.alias("chaijs-chai/lib/chai/utils/getProperties.js", "modelfactory/deps/chai/lib/chai/utils/getProperties.js");
+require.alias("chaijs-chai/lib/chai/utils/index.js", "modelfactory/deps/chai/lib/chai/utils/index.js");
+require.alias("chaijs-chai/lib/chai/utils/inspect.js", "modelfactory/deps/chai/lib/chai/utils/inspect.js");
+require.alias("chaijs-chai/lib/chai/utils/objDisplay.js", "modelfactory/deps/chai/lib/chai/utils/objDisplay.js");
+require.alias("chaijs-chai/lib/chai/utils/overwriteMethod.js", "modelfactory/deps/chai/lib/chai/utils/overwriteMethod.js");
+require.alias("chaijs-chai/lib/chai/utils/overwriteProperty.js", "modelfactory/deps/chai/lib/chai/utils/overwriteProperty.js");
+require.alias("chaijs-chai/lib/chai/utils/test.js", "modelfactory/deps/chai/lib/chai/utils/test.js");
+require.alias("chaijs-chai/lib/chai/utils/transferFlags.js", "modelfactory/deps/chai/lib/chai/utils/transferFlags.js");
+require.alias("chaijs-chai/lib/chai/utils/type.js", "modelfactory/deps/chai/lib/chai/utils/type.js");
+require.alias("chaijs-chai/index.js", "modelfactory/deps/chai/index.js");
 require.alias("chaijs-chai/index.js", "chai/index.js");
 require.alias("chaijs-assertion-error/index.js", "chaijs-chai/deps/assertion-error/index.js");
 require.alias("chaijs-assertion-error/index.js", "chaijs-chai/deps/assertion-error/index.js");
 require.alias("chaijs-assertion-error/index.js", "chaijs-assertion-error/index.js");
 require.alias("chaijs-chai/index.js", "chaijs-chai/index.js");
-require.alias("visionmedia-mocha-cloud/client.js", "climongoose/deps/mocha-cloud/client.js");
-require.alias("visionmedia-mocha-cloud/client.js", "climongoose/deps/mocha-cloud/index.js");
+require.alias("visionmedia-mocha-cloud/client.js", "modelfactory/deps/mocha-cloud/client.js");
+require.alias("visionmedia-mocha-cloud/client.js", "modelfactory/deps/mocha-cloud/index.js");
 require.alias("visionmedia-mocha-cloud/client.js", "mocha-cloud/index.js");
 require.alias("visionmedia-mocha-cloud/client.js", "visionmedia-mocha-cloud/index.js");
-require.alias("climongoose/lib/index.js", "climongoose/index.js");
+require.alias("modelfactory/lib/index.js", "modelfactory/index.js");

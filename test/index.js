@@ -1,10 +1,10 @@
 /*global describe:true,beforeEach:true,afterEach:true,it:true*/
 
-var climongoose = require(this.window ? 'climongoose' : '..'),
+var modelfactory = require(this.window ? 'modelfactory' : '..'),
     chai = require('chai'),
     expect = chai.expect,
-    model = climongoose.model,
-    Schema = climongoose.Schema,
+    model = modelfactory.model,
+    Schema = modelfactory.Schema,
     ObjectId = Schema.Types.ObjectId;
 
 
@@ -121,7 +121,7 @@ var User = model(schema),
     user,
     emit;
 
-describe('climongoose specs', function() {
+describe('modelfactory specs', function() {
   beforeEach(function() {
     emit = 0;
     user = new User({
@@ -145,12 +145,12 @@ describe('climongoose specs', function() {
   });
 
   it('should expose Schema and Error', function() {
-    expect(climongoose.Schema).to.be.ok;
-    expect(climongoose.Error).to.be.ok;
+    expect(modelfactory.Schema).to.be.ok;
+    expect(modelfactory.Error).to.be.ok;
   });
 
   it('should get same Model class for same schema', function () {
-    expect(climongoose.model(schema)).to.eq(User);
+    expect(modelfactory.model(schema)).to.eq(User);
   });
 
   it('should create default user without errors', function() {

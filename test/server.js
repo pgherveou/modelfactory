@@ -5,7 +5,7 @@ var express = require('express'),
     app = express(),
     Cloud = require('mocha-cloud'),
     auth = fs.readFileSync(path.join(__dirname, '.auth'), 'ascii').trim().split(':'),
-    cloud = new Cloud('climongoose', auth[0], auth[1]);
+    cloud = new Cloud('modelfactory', auth[0], auth[1]);
 
 // express app config
 app.set('port', 4000);

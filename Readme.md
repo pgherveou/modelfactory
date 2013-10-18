@@ -1,14 +1,14 @@
-# climongoose
+# modelfactory
 
   Data models with schema definition, and event propagation inspired from Mongoose & Backbone.js
 
 # Example
 
   ```js
-var climongoose = require('climongoose');
+var modelfactory = require('modelfactory');
 
 // create a User Model
-var User = climongoose.model({
+var User = modelfactory.model({
   email: {type: String, required: true, match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/},
   age: {type: Number, min: 13},
   date: {type: Date, default: Date.now},
@@ -74,11 +74,11 @@ console.log(user.validate()); // KO
 
   Install with [component](http://component.io):
 
-    $ component install pgherveou/climongoose
+    $ component install pgherveou/modelfactory
 
   Install with [npm](http://npmjs.org):
 
-    $ npm install climongoose
+    $ npm install modelfactory
 
 
 ## supported browsers

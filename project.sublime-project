@@ -13,7 +13,7 @@
         "build",
         "test/mocha"
       ],
-      "name": "climongoose",
+      "name": "modelfactory",
       "path": "."
     }
   ],
