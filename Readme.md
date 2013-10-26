@@ -83,8 +83,8 @@ user.on('change:name', function() {/* do something when name change */});
 user.name.first = 'johny'
 
 // or embedded arrays
-user.trophees.on('add', function() {/* do something with added trophee */});
-user.trophees.on('change:name', function() {/* do something when a trophee name change */});
+user.trophies.on('add', function() {/* do something with added trophee */});
+user.trophies.on('change:name', function() {/* do something when a trophee name change */});
 
 // validation use schema rules
 user.email = "johnyatgmail.com";
