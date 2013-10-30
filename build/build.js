@@ -4992,14 +4992,17 @@ var Schema = require('./schema'),\n\
  * module globals\n\
  */\n\
 \n\
-var define, compile;\n\
+var modelfactory = {},\n\
+    plugins = [],\n\
+    define, compile;\n\
 \n\
 /*!\n\
  * exports stuffs\n\
  */\n\
 \n\
-module.exports.Schema = Schema;\n\
-module.exports.Error = Errors;\n\
+module.exports = modelfactory;\n\
+modelfactory.Schema = Schema;\n\
+modelfactory.Error = Errors;\n\
 \n\
 /**\n\
  * compile schema\n\
@@ -5084,6 +5087,23 @@ define = function define(prop, subprops, prototype, prefix) {\n\
   }\n\
 };\n\
 \n\
+\n\
+/**\n\
+ * Declares a global plugin executed on all Schemas.\n\
+ *\n\
+ * Equivalent to calling `.plugin(fn)` on each Schema you create.\n\
+ *\n\
+ * @param {Function} fn plugin callback\n\
+ * @param {Object} [opts] optional options\n\
+ * @return {Modelfactory} this\n\
+ * @api public\n\
+ */\n\
+\n\
+modelfactory.plugin = function (fn, opts) {\n\
+  plugins.push([fn, opts]);\n\
+  return modelfactory;\n\
+};\n\
+\n\
 /**\n\
  * model factory\n\
  *\n\
@@ -5092,7 +5112,7 @@ define = function define(prop, subprops, prototype, prefix) {\n\
  * @api public\n\
  */\n\
 \n\
-module.exports.model = function (schema) {\n\
+modelfactory.model = function (schema) {\n\
 \n\
   // cast to Schema instance?\n\
   if (!(schema instanceof Schema)) {\n\
@@ -5104,9 +5124,14 @@ module.exports.model = function (schema) {\n\
   // return model already generated\n\
   if (schema.model) return schema.model;\n\
 \n\
+  // apply plugins\n\
+  plugins.forEach(function (plugin) {\n\
+    schema.plugin.apply(schema, plugin);\n\
+  });\n\
+\n\
   // create model class\n\
   function model () {\n\
-    Object.defineProperty(this, 'schema', {value: schema})\n\
+    Object.defineProperty(this, 'schema', {value: schema});\n\
     Model.apply(this, arguments);\n\
   }\n\
 \n\
@@ -5709,6 +5734,20 @@ Schema.prototype.getKeyVals = function (obj, prefix) {\n\
       }\n\
     });\n\
   return ret;\n\
+};\n\
+\n\
+/**\n\
+ * Registers a plugin for this schema.\n\
+ *\n\
+ * @param {Function} plugin callback\n\
+ * @param {Object} opts\n\
+ * @see plugins\n\
+ * @api public\n\
+ */\n\
+\n\
+Schema.prototype.plugin = function (fn, opts) {\n\
+  fn(this, opts);\n\
+  return this;\n\
 };\n\
 \n\
 /**\n\

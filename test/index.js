@@ -7,11 +7,12 @@ var modelfactory = require(this.window ? 'modelfactory' : '..'),
     Schema = modelfactory.Schema,
     ObjectId = Schema.Types.ObjectId;
 
+// global plugin
+modelfactory.plugin(function(schema) {
+  schema.static('save', function() {});
+});
 
-/**
- * Sample Project sche
- */
-
+//Sample Project sche
 var ProjectSchema = new Schema({
   name: {type: String},
   category: {type: String, enum: ['Web', 'Mobile']}
@@ -21,11 +22,12 @@ ProjectSchema.path('category').set(function(v) {
   return v[0].toUpperCase() + v.slice(1);
 });
 
-/**
- * Sample User Schema
- */
+ProjectSchema.plugin(function(schema) {
+  schema.static('foo', function() {});
+});
 
-var schema = new Schema({
+// Sample User Schema
+var UserSchema = new Schema({
     email: {
       type: String,
       required: true,
@@ -96,33 +98,34 @@ var schema = new Schema({
     }
   });
 
-schema.path('name.last').set(function(v) {
+UserSchema.path('name.last').set(function(v) {
   return v[0].toUpperCase() + v.slice(1);
 });
 
-schema.path('creditcard').get(function(v) {
+UserSchema.path('creditcard').get(function(v) {
   return v.slice(0, 3) + '**********';
 });
 
-schema.method('hello', function() {
+UserSchema.method('hello', function() {
   return 'hello ' + this.name.first;
 });
 
-schema.static('version', function() {
+UserSchema.static('version', function() {
   return '0.1';
 });
 
-schema.virtual('name.full').get(function() {
+UserSchema.virtual('name.full').get(function() {
   return this.name.first + ' ' + this.name.last;
 });
 
-schema.virtual('name.full').set(function(v) {
+UserSchema.virtual('name.full').set(function(v) {
   var split = v.split(' ');
   this.name.first = split.shift();
   this.name.last = split.join(' ');
 });
 
-var User = model(schema),
+var User = model(UserSchema),
+    Project = model(ProjectSchema),
     user,
     emit;
 
@@ -156,8 +159,18 @@ describe('modelfactory specs', function() {
     expect(modelfactory.Error).to.be.ok;
   });
 
+  it('should have global plugins methods', function() {
+    expect(Project).itself.to.respondTo('save');
+    expect(User).itself.to.respondTo('save');
+  });
+
+  it('should have local plugin methods', function() {
+    expect(Project).itself.to.respondTo('foo');
+    expect(User).itself.not.to.respondTo('foo');
+  });
+
   it('should get same Model class for same schema', function () {
-    expect(modelfactory.model(schema)).to.eq(User);
+    expect(modelfactory.model(UserSchema)).to.eq(User);
   });
 
   it('should create default user without errors', function() {
@@ -536,7 +549,7 @@ describe('modelfactory specs', function() {
       return true;
     };
 
-    schema.path('creditcard').validators.push([validator, 'cc-validator']);
+    UserSchema.path('creditcard').validators.push([validator, 'cc-validator']);
     user.validate();
     expect(called).to.be.ok;
   });
