@@ -1,6 +1,6 @@
 {
   "name": "modelfactory",
-  "version": "0.1.4",
+  "version": "0.1.5",
 
   "dependencies": {
     "emitter": "http://github.com/component/emitter/archive/1.0.1.tar.gz",
