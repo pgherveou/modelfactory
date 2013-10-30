@@ -256,7 +256,8 @@ function mixin(obj) {\n\
  * @api public\n\
  */\n\
 \n\
-Emitter.prototype.on = function(event, fn){\n\
+Emitter.prototype.on =\n\
+Emitter.prototype.addEventListener = function(event, fn){\n\
   this._callbacks = this._callbacks || {};\n\
   (this._callbacks[event] = this._callbacks[event] || [])\n\
     .push(fn);\n\
@@ -299,7 +300,8 @@ Emitter.prototype.once = function(event, fn){\n\
 \n\
 Emitter.prototype.off =\n\
 Emitter.prototype.removeListener =\n\
-Emitter.prototype.removeAllListeners = function(event, fn){\n\
+Emitter.prototype.removeAllListeners =\n\
+Emitter.prototype.removeEventListener = function(event, fn){\n\
   this._callbacks = this._callbacks || {};\n\
 \n\
   // all\n\
@@ -415,9 +417,15 @@ var emitter = require('emitter');\n\
 function ModelArray (values, model) {\n\
   var arr = [];\n\
   arr.__proto__ = this;\n\
-  arr._byId = Object.create(null);\n\
-  arr.model = model;\n\
-  arr.silent().push.apply(arr, values);\n\
+  Object.defineProperty(this, '_silent', {});\n\
+  Object.defineProperty(this, '_callbacks', {value: Object.create(null)});\n\
+  Object.defineProperty(this, '_byId', {value: Object.create(null)});\n\
+  Object.defineProperty(this, 'model', {value: model});\n\
+  if (values && Array.isArray(values)) {\n\
+    arr.silent().push.apply(arr, values);\n\
+  } else if (values) {\n\
+    arr.silent().push.call(arr, values);\n\
+  }\n\
   return arr;\n\
 }\n\
 \n\
@@ -435,10 +443,6 @@ module.exports = ModelArray;\n\
 \n\
 /**\n\
  * Item constructor class\n\
- *\n\
- * #### NOTE:\n\
- * items should expose an id, cid or a toString() method\n\
- * that can be use as a key to index models in the array\n\
  *\n\
  * if your item has a set method, it will be use\n\
  * to update references when calling arrayItem.set()\n\
@@ -470,7 +474,7 @@ function _uniq() {\n\
     if (ids[id]) return;\n\
 \n\
     list.push(model);\n\
-    ids[id] = true;\n\
+    if ('object' !== typeof id) ids[id] = true;\n\
   }, this);\n\
 \n\
   return list;\n\
@@ -526,10 +530,13 @@ ModelArray.prototype.emit = function () {\n\
  */\n\
 \n\
 ModelArray.prototype.index = function () {\n\
+  var value;\n\
   [].forEach.call(arguments, function (m) {\n\
     if (m.id) this._byId[m.id] = m;\n\
     if (m.cid) this._byId[m.cid] = m;\n\
-    if (!m.id && !m.cid) this._byId[m.toString()] = m;\n\
+    if (!m.id && !m.cid && ('object' !== typeof (value = m.valueOf()))) {\n\
+      this._byId[value] = m;\n\
+    }\n\
   }, this);\n\
 };\n\
 \n\
@@ -544,7 +551,7 @@ ModelArray.prototype.unindex = function () {\n\
   [].forEach.call(arguments, function (m) {\n\
     if (m.id) delete this._byId[m.id];\n\
     if (m.cid) delete this._byId[m.cid];\n\
-    if (!m.id && !m.cid) delete this._byId[m.toString()];\n\
+    if (!m.id && !m.cid) delete this._byId[m.valueOf()];\n\
   }, this);\n\
 };\n\
 \n\
@@ -558,7 +565,9 @@ ModelArray.prototype.unindex = function () {\n\
 \n\
 ModelArray.prototype.get = function (obj) {\n\
   if (!obj) return;\n\
-  return this._byId[obj.id] || this._byId[obj.cid] || this._byId[obj];\n\
+  var id = obj.id || obj.cid || obj.valueOf();\n\
+  if (id && 'object' !== typeof(id)) return this._byId[id];\n\
+  return this[this.indexOf(id)];\n\
 };\n\
 \n\
 /**\n\
@@ -608,7 +617,7 @@ ModelArray.prototype.remove = function () {\n\
 ModelArray.prototype.set = function (models) {\n\
   var toAdd = [],\n\
       toRemove = [],\n\
-      ids = Object.create(null),\n\
+      ids = [],\n\
       silent = !!this._silent,\n\
       id;\n\
 \n\
@@ -621,8 +630,7 @@ ModelArray.prototype.set = function (models) {\n\
     .forEach(function (model) {\n\
       var existing = this.get(model);\n\
       if (existing) {\n\
-        id = existing.id || existing.cid || existing.toString();\n\
-        ids[id] = true;\n\
+        ids.push(existing.id || existing.cid || existing.valueOf());\n\
         if (existing.set) {\n\
           existing.set(model);\n\
         } else {\n\
@@ -637,8 +645,8 @@ ModelArray.prototype.set = function (models) {\n\
 \n\
   // get models to remove\n\
   this.forEach(function (model) {\n\
-    id = model.id || model.cid || model.toString();\n\
-    if (!ids[id]) toRemove.push(model);\n\
+    id = model.id || model.cid || model.valueOf();\n\
+    if (ids.indexOf(id) === -1) toRemove.push(model);\n\
   });\n\
 \n\
   // remove & add models\n\
@@ -795,6 +803,18 @@ ModelArray.prototype.sort = function (fn) {\n\
       ret = [].sort.call(this, compare);\n\
   this.emit('sort', this);\n\
   return ret;\n\
+};\n\
+\n\
+/**\n\
+ * Create JSON representation of this array\n\
+ *\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.toJSON = function () {\n\
+  return this.map(function (model) {\n\
+    return model.toJSON ? model.toJSON() : model;\n\
+  });\n\
 };\n\
 //@ sourceURL=pgherveou-modelarray/index.js"
 ));
@@ -5086,7 +5106,7 @@ module.exports.model = function (schema) {\n\
 \n\
   // create model class\n\
   function model () {\n\
-    this.schema = schema;\n\
+    Object.defineProperty(this, 'schema', {value: schema})\n\
     Model.apply(this, arguments);\n\
   }\n\
 \n\
@@ -5106,6 +5126,9 @@ module.exports.model = function (schema) {\n\
   // apply statics\n\
   for (i in schema.statics)\n\
     model[i] = schema.statics[i];\n\
+\n\
+  // attach schema\n\
+  model.schema = schema;\n\
 \n\
   return model;\n\
 };\n\
@@ -5139,7 +5162,8 @@ function uniqueId() {\n\
  */\n\
 \n\
 function Model(obj) {\n\
-  this._doc = {};\n\
+  Object.defineProperty(this, '_doc', {value: Object.create(null)});\n\
+  Object.defineProperty(this, '_callbacks', {value: Object.create(null)});\n\
   this.cid = uniqueId();\n\
   this._build(obj);\n\
   this.emit('init', this, obj);\n\
@@ -5379,12 +5403,16 @@ Model.prototype.validate = function (doc, opts) {\n\
   var errors = [],\n\
       paths;\n\
 \n\
-  if (opts.paths) {\n\
+  if ('string' === typeof opts) {\n\
+    paths = opts.split(' ');\n\
+  } else if ('string' === typeof opts.paths) {\n\
+    paths = opts.paths.split(' ');\n\
+  } else if (Array.isArray(opts.paths)) {\n\
     paths = opts.paths;\n\
-    if ('string' === typeof paths) paths = paths.split(' ');\n\
-  } else {\n\
-    paths = Object.keys(this.schema.paths);\n\
   }\n\
+\n\
+  // validate all if no path specified\n\
+  if (!paths) paths = Object.keys(this.schema.paths);\n\
 \n\
   paths.forEach(function (path) {\n\
     var p = this.schema.path(path),\n\
@@ -5404,7 +5432,13 @@ Model.prototype.validate = function (doc, opts) {\n\
  */\n\
 \n\
 Model.prototype.toJSON = function () {\n\
-  return this._doc;\n\
+  var obj = {};\n\
+  Object.keys(this.schema.tree).forEach(function (key) {\n\
+    obj[key] = (this._doc[key] && this._doc[key].toJSON)\n\
+             ? this._doc[key].toJSON()\n\
+             : this._doc[key];\n\
+  }, this);\n\
+  return obj;\n\
 };\n\
 //@ sourceURL=modelfactory/lib/model.js"
 ));
@@ -5462,7 +5496,7 @@ module.exports.setPath = function setPath(obj, path, val) {\n\
       last = subpaths.pop();\n\
 \n\
   obj = subpaths.reduce(function(prev, current){\n\
-    if (!prev[current]) prev[current] = {};\n\
+    if (!prev[current]) prev[current] = Object.create(null);\n\
     return prev[current];\n\
 \n\
   }, obj);\n\
@@ -5524,14 +5558,18 @@ Schema.prototype.add = function(obj, prefix) {\n\
   prefix || (prefix = '');\n\
 \n\
   Object.keys(obj).forEach(function(key) {\n\
+\n\
     if (!obj[key]) {\n\
       throw new TypeError('Invalid value for schema path `' + (prefix + key) + '`');\n\
     }\n\
 \n\
-    if (obj[key].constructor && obj[key].constructor.name !== 'Object')\n\
+    if (obj[key].constructor && obj[key].constructor.name !== 'Object') {\n\
       obj[key] = {type: obj[key]};\n\
+    }\n\
 \n\
     if (Array.isArray(obj[key]) || Array.isArray(obj[key].type)) {\n\
+      this.path(prefix + key, obj[key]);\n\
+    } else if (obj[key].type instanceof Schema) {\n\
       this.path(prefix + key, obj[key]);\n\
     } else if (obj[key].type && 'function' === typeof obj[key].type) {\n\
       this.path(prefix + key, obj[key]);\n\
@@ -5603,6 +5641,10 @@ Schema.interpretAsType = function(path, obj) {\n\
   var type = obj.type && !obj.type.type\n\
     ? obj.type\n\
     : {};\n\
+\n\
+  if (obj.type instanceof Schema) {\n\
+    return new Types.EmbeddedDocument(path,  obj);\n\
+  }\n\
 \n\
   if (Array.isArray(obj) || Array.isArray(obj.type)) {\n\
     return new Types.DocumentArray(path,  obj);\n\
@@ -6049,7 +6091,8 @@ var types = {\n\
   Number: require('./number'),\n\
   Boolean: require('./boolean'),\n\
   Date: require('./date'),\n\
-  DocumentArray: require('./documentarray')\n\
+  DocumentArray: require('./documentarray'),\n\
+  EmbeddedDocument: require('./embedded')\n\
 };\n\
 \n\
 module.exports = types;\n\
@@ -6400,12 +6443,16 @@ var SchemaType = require('../schemaType'),\n\
 \n\
 function DocumentArray(key, options) {\n\
 \n\
-  // get SubDocument Schema\n\
-  var schema = Array.isArray(options)\n\
-             ? options[0]\n\
-             : options.type[0],\n\
-      type, Model;\n\
+  var schema, Type, Model;\n\
 \n\
+  // get SubDocument Schema & options\n\
+  schema = options.type[0];\n\
+\n\
+  if (schema.type && ('function' === typeof schema.type)) {\n\
+    Type = DocumentArray.getSchemaType(schema.type);\n\
+    this.arrType = new Type('', schema);\n\
+    schema = schema.type;\n\
+  }\n\
 \n\
   // document array class\n\
   this.DocArray = function DocArray(values, scope) {\n\
@@ -6430,9 +6477,9 @@ function DocumentArray(key, options) {\n\
 \n\
   // else override modelArray_cast with type#cast\n\
   } else {\n\
-    type = DocumentArray.getSchemaType(schema);\n\
+    Type = DocumentArray.getSchemaType(schema);\n\
     this.DocArray.prototype._cast = function (value) {\n\
-      return type.prototype.cast.call(this, value);\n\
+      return Type.prototype.cast.call(this, value);\n\
     };\n\
   }\n\
 \n\
@@ -6473,16 +6520,142 @@ DocumentArray.prototype.doValidate = function (array) {\n\
 \n\
   if (errs) return errs;\n\
   if (!array) return;\n\
-  if (!this.SubDocument) return;\n\
 \n\
   // validate items\n\
   array.forEach(function (model) {\n\
-    var modelErrs = model.validate();\n\
+    var modelErrs;\n\
+\n\
+    if (model.validate) {\n\
+      modelErrs = model.validate();\n\
+    } else if (this.arrType) {\n\
+      modelErrs = this.arrType.doValidate(model);\n\
+    }\n\
+\n\
     if (modelErrs) {\n\
       errs || (errs = []);\n\
-      errs.concat(modelErrs);\n\
+      [].push.apply(errs, modelErrs.map(function (err) {\n\
+        var path = err.path;\n\
+        err.path =  this.path + '.' + array.indexOf(model);\n\
+        if (path) err.path += '.' + path;\n\
+        return err;\n\
+      }, this));\n\
     }\n\
-  });\n\
+\n\
+  }, this);\n\
+\n\
+  return errs;\n\
+};\n\
+\n\
+/**\n\
+ * min validator\n\
+ *\n\
+ * @param  {Number} val\n\
+ * @api public\n\
+ */\n\
+\n\
+DocumentArray.prototype.min = function(val) {\n\
+  var check = function(v) {\n\
+    if (!v) return true;\n\
+    return v.length >= val;\n\
+  };\n\
+  return this.validators.push([check, 'min']);\n\
+};\n\
+\n\
+/**\n\
+ * max validator\n\
+ *\n\
+ * @param  {Number} val\n\
+ * @api public\n\
+ */\n\
+\n\
+DocumentArray.prototype.max = function(val) {\n\
+  var check = function(v) {\n\
+    if (!v) return true;\n\
+    return v.length <= val;\n\
+  };\n\
+  return this.validators.push([check, 'max']);\n\
+};\n\
+\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = DocumentArray;\n\
+//@ sourceURL=modelfactory/lib/schema/documentarray.js"
+));
+require.register("modelfactory/lib/schema/embedded.js", Function("exports, require, module",
+"/*!\n\
+ * module dependencies\n\
+ */\n\
+\n\
+var SchemaType = require('../schemaType');\n\
+\n\
+/**\n\
+ * Constructor\n\
+ *\n\
+ * @param {String} key\n\
+ * @param {Object} options\n\
+ */\n\
+\n\
+function EmbeddedDocument(key, options) {\n\
+  this.schema = options.type\n\
+             ? options.type\n\
+             : options;\n\
+\n\
+  SchemaType.call(this, key, options, 'EmbeddedDocument');\n\
+}\n\
+\n\
+/*!\n\
+ * extend SchemaType\n\
+ */\n\
+\n\
+EmbeddedDocument.prototype.__proto__ = SchemaType.prototype;\n\
+\n\
+/**\n\
+ * Casts contents\n\
+ *\n\
+ * @param {Object} value\n\
+ * @param {doc} doc document that triggers the casting\n\
+ * @api private\n\
+ */\n\
+\n\
+EmbeddedDocument.prototype.cast = function (value, doc) {\n\
+  if (!value) return value;\n\
+\n\
+  var model;\n\
+  if (value instanceof this.schema.model) {\n\
+    model = value;\n\
+  } else {\n\
+    model = new this.schema.model(value);\n\
+  }\n\
+  model.parent || (model.parent = doc);\n\
+  return model;\n\
+};\n\
+\n\
+/**\n\
+ * Validate Schema\n\
+ *\n\
+ * @override SchemaType#doValidate\n\
+ * @api public\n\
+ */\n\
+\n\
+EmbeddedDocument.prototype.doValidate = function (model) {\n\
+\n\
+  // validate self first\n\
+  var errs = SchemaType.prototype.doValidate.apply(this, arguments);\n\
+\n\
+  if (errs) return errs;\n\
+  if (!model) return;\n\
+\n\
+  errs = model.validate();\n\
+\n\
+  if (errs) {\n\
+    errs.map(function (err) {\n\
+      err.path = this.path + '.' + err.path;\n\
+      return err;\n\
+    }, this);\n\
+  }\n\
 \n\
   return errs;\n\
 };\n\
@@ -6491,8 +6664,8 @@ DocumentArray.prototype.doValidate = function (array) {\n\
  * module exports\n\
  */\n\
 \n\
-module.exports = DocumentArray;\n\
-//@ sourceURL=modelfactory/lib/schema/documentarray.js"
+module.exports = EmbeddedDocument;\n\
+//@ sourceURL=modelfactory/lib/schema/embedded.js"
 ));
 
 

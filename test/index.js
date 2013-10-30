@@ -14,7 +14,7 @@ var modelfactory = require(this.window ? 'modelfactory' : '..'),
 
 var ProjectSchema = new Schema({
   name: {type: String},
-  category: {type: String}
+  category: {type: String, enum: ['Web', 'Mobile']}
 });
 
 ProjectSchema.path('category').set(function(v) {
@@ -63,11 +63,16 @@ var schema = new Schema({
       type: ObjectId
     },
 
+    project: {type: ProjectSchema, required: true},
+
     projects: [ProjectSchema],
-    tags: [{type: String}],
+
+    tags: [{type: String, enum: ['js', 'html']}],
+
     keywords: {
       type: [String],
-      default: ['one', 'two']
+      default: ['one', 'two'],
+      max: 3
     },
 
     name: {
@@ -130,11 +135,13 @@ describe('modelfactory specs', function() {
       age: 44,
       creditcard: '123-456-789',
       sex: 'male',
+      project: {name: 'current project', category: 'web'},
       projects: [
-        {name: 'project1', category: 'marketing'},
-        {name: 'project2', category: 'finance'}
+        {name: 'project1', category: 'web'},
+        {name: 'project2', category: 'mobile'}
       ],
       keywords: ['foo', 'bar'],
+      tags: ['js'],
       date: new Date(),
       one: {two: {tree: true}}
     });
@@ -180,6 +187,8 @@ describe('modelfactory specs', function() {
 
   it('should get an array property', function() {
     expect(user.keywords.slice()).to.deep.equal(['foo', 'bar']);
+    expect(user.tags.slice()).to.deep.equal(['js']);
+    expect(user.projects[0].name).to.eq('project1');
     expect(user.projects).to.have.length(2);
   });
 
@@ -213,6 +222,30 @@ describe('modelfactory specs', function() {
     user.age = '30';
     expect(user.age).to.eq(30);
     expect(user.getValue('age')).to.eq(30);
+  });
+
+  it('should cast arr values', function () {
+    var i = user.tags.push(3);
+    expect(user.tags[i-1]).to.eq('3');
+  });
+
+  it('should cast embedded value', function () {
+    var p1, p2;
+     p1 = {
+        name: 'current project',
+        category: 'web'
+      };
+
+    user.project = p1;
+    expect(user.project).to.be.instanceof(ProjectSchema.model);
+
+    p2 = new ProjectSchema.model({
+      name: 'other project',
+      category: 'web'
+    });
+
+    user.project = p2;
+    expect(user.project).to.eq(p2);
   });
 
   it('should set default values', function () {
@@ -354,8 +387,12 @@ describe('modelfactory specs', function() {
       emit++;
     });
 
+    project.on('change:name', function () {
+      emit++;
+    });
+
     project.name = 'other';
-    expect(emit).to.eq(1);
+    expect(emit).to.eq(2);
   });
 
   it('should use virtual method getter', function() {
@@ -418,10 +455,64 @@ describe('modelfactory specs', function() {
     expect(errs).to.have.deep.property('[0].type', 'max');
   });
 
-  it('should only validate specifed paths string format', function() {
+  it('should reject unvalid array', function() {
+    user.keywords.push('three', 'four');
+    var errs = user.validate();
+    expect(errs).to.be.ok;
+    expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'keywords');
+    expect(errs).to.have.deep.property('[0].type', 'max');
+  });
+
+  it('should reject unvalid array item', function() {
+    user.projects.push({name: 'project 3', category: 'invalid'});
+    var errs = user.validate();
+    expect(errs).to.be.ok;
+    expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'projects.2.category');
+    expect(errs).to.have.deep.property('[0].type', 'enum');
+  });
+
+  it('should reject unvalid primitive array item', function() {
+    user.tags.push('unvalid');
+    var errs = user.validate();
+    expect(errs).to.be.ok;
+    expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'tags.1');
+    expect(errs).to.have.deep.property('[0].type', 'enum');
+  });
+
+  it('should reject unvalid embbedded doc (missing doc)', function() {
+    user.project = null;
+    var errs = user.validate();
+    expect(errs).to.be.ok;
+    expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'project');
+    expect(errs).to.have.deep.property('[0].type', 'required');
+  });
+
+  it('should reject unvalid embbedded doc (bad doc)', function() {
+    user.project = {name: 'some unvalid project', category: 'unvalid'};
+    var errs = user.validate();
+    expect(errs).to.be.ok;
+    expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'project.category');
+    expect(errs).to.have.deep.property('[0].type', 'enum');
+  });
+
+  it('should only validate specifed paths using object format', function() {
     user.email = 'john[at]gmail.com';
     user.age = 205;
-    var errs = user.validate({paths: 'email', validate: true});
+    var errs = user.validate({paths: 'email'});
+    expect(errs).to.be.ok;
+    expect(errs).to.have.length(1);
+    expect(errs).to.have.deep.property('[0].path', 'email');
+  });
+
+  it('should only validate specifed paths using string format', function() {
+    user.email = 'john[at]gmail.com';
+    user.age = 205;
+    var errs = user.validate('email');
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
     expect(errs).to.have.deep.property('[0].path', 'email');
@@ -430,7 +521,7 @@ describe('modelfactory specs', function() {
   it('should only validate specifed paths array format', function() {
     user.email = 'john[at]gmail.com';
     user.age = 205;
-    var errs = user.validate({paths: ['email'], validate: true});
+    var errs = user.validate({paths: ['email']});
     expect(errs).to.be.ok;
     expect(errs).to.have.length(1);
     expect(errs).to.have.deep.property('[0].path', 'email');

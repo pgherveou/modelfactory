@@ -33,7 +33,8 @@
     "lib/schema/number.js",
     "lib/schema/string.js",
     "lib/schema/objectid.js",
-    "lib/schema/documentarray.js"
+    "lib/schema/documentarray.js",
+    "lib/schema/embedded.js"
   ],
   "remotes": []
 }
