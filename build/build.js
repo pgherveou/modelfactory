@@ -4986,7 +4986,9 @@ require.register("modelfactory/lib/index.js", Function("exports, require, module
 \n\
 var Schema = require('./schema'),\n\
     Model = require('./model'),\n\
-    Errors = require('./errors');\n\
+    globals = require('./globals'),\n\
+    Errors = require('./errors'),\n\
+    idCounter = 0;\n\
 \n\
 /*!\n\
  * module globals\n\
@@ -4995,6 +4997,16 @@ var Schema = require('./schema'),\n\
 var modelfactory = {},\n\
     plugins = [],\n\
     define, compile;\n\
+\n\
+\n\
+/**\n\
+ * create unique id\n\
+ * @return {String}\n\
+ */\n\
+\n\
+function uniqueId() {\n\
+  return  'm_' + (++idCounter);\n\
+}\n\
 \n\
 /*!\n\
  * exports stuffs\n\
@@ -5107,6 +5119,12 @@ modelfactory.plugin = function (fn, opts) {\n\
 /**\n\
  * model factory\n\
  *\n\
+ * example:\n\
+ *   User = modelfactory.model({\n\
+ *     firstname: String,\n\
+ *     lastnae: String,\n\
+ *   })\n\
+ *\n\
  * @param  {Schema} schema\n\
  * @return {Model} the model class constructor\n\
  * @api public\n\
@@ -5119,8 +5137,6 @@ modelfactory.model = function (schema) {\n\
     schema = new Schema(schema);\n\
   }\n\
 \n\
-  var i;\n\
-\n\
   // return model already generated\n\
   if (schema.model) return schema.model;\n\
 \n\
@@ -5130,9 +5146,29 @@ modelfactory.model = function (schema) {\n\
   });\n\
 \n\
   // create model class\n\
-  function model () {\n\
+  function model (obj) {\n\
+    if (!obj) obj = {};\n\
+\n\
+    var id = obj[globals.idAttribute],\n\
+        existing = schema.store.get(id);\n\
+\n\
+    // return existing model\n\
+    if (existing) {\n\
+      existing.set(obj);\n\
+      return existing;\n\
+    }\n\
+\n\
+    Object.defineProperty(this, '_doc', {value: Object.create(null)});\n\
+    Object.defineProperty(this, '_callbacks', {value: Object.create(null)});\n\
     Object.defineProperty(this, 'schema', {value: schema});\n\
-    Model.apply(this, arguments);\n\
+\n\
+    this.cid = uniqueId();\n\
+    this.id = id;\n\
+    this._build(obj);\n\
+    this.emit('init', this);\n\
+\n\
+    // add to store\n\
+    schema.store.add(this);\n\
   }\n\
 \n\
   // store generated model\n\
@@ -5144,13 +5180,9 @@ modelfactory.model = function (schema) {\n\
   // compile schema\n\
   compile(schema.tree, model.prototype);\n\
 \n\
-  // apply methods\n\
-  for (i in schema.methods)\n\
-    model.prototype[i] = schema.methods[i];\n\
-\n\
-  // apply statics\n\
-  for (i in schema.statics)\n\
-    model[i] = schema.statics[i];\n\
+  // apply methods & statics\n\
+  for (var i in schema.methods) model.prototype[i] = schema.methods[i];\n\
+  for (i in schema.statics) model[i] = schema.statics[i];\n\
 \n\
   // attach schema\n\
   model.schema = schema;\n\
@@ -5172,26 +5204,13 @@ require.register("modelfactory/lib/model.js", Function("exports, require, module
     globals = require('./globals'),\n\
     getPath = utils.getPath,\n\
     hasPath = utils.hasPath,\n\
-    setPath = utils.setPath,\n\
-    idCounter = 0;\n\
-\n\
-function uniqueId() {\n\
-  return  'm_' + (++idCounter);\n\
-}\n\
+    setPath = utils.setPath;\n\
 \n\
 /**\n\
- * Model constructor, inherit from Emitter\n\
- *\n\
- * @param {[type]} obj [description]\n\
- * @api public\n\
+ * Model Class\n\
  */\n\
 \n\
-function Model(obj) {\n\
-  Object.defineProperty(this, '_doc', {value: Object.create(null)});\n\
-  Object.defineProperty(this, '_callbacks', {value: Object.create(null)});\n\
-  this.cid = uniqueId();\n\
-  this._build(obj);\n\
-  this.emit('init', this, obj);\n\
+function Model() {\n\
 }\n\
 \n\
 /*!\n\
@@ -5199,15 +5218,6 @@ function Model(obj) {\n\
  */\n\
 \n\
 Model.prototype.__proto__ = Emitter.prototype;\n\
-\n\
-/**\n\
- * The documents schema.\n\
- *\n\
- * @property schema\n\
- * @api public\n\
- */\n\
-\n\
-Model.prototype.schema;\n\
 \n\
 /*!\n\
  * export\n\
@@ -5225,6 +5235,9 @@ module.exports = Model;\n\
 Object.defineProperty(Model.prototype, 'id', {\n\
   get: function () {\n\
     return this._doc[globals.idAttribute];\n\
+  },\n\
+  set: function (val) {\n\
+    this._doc[globals.idAttribute] = val;\n\
   }\n\
 });\n\
 \n\
@@ -5388,7 +5401,7 @@ Model.prototype._build = function (obj) {\n\
     .keys(this.schema.paths)\n\
     .forEach(function (key) {\n\
       var schema = this.schema.paths[key],\n\
-          exist = obj && hasPath(obj, key),\n\
+          exist = hasPath(obj, key),\n\
           val;\n\
 \n\
       if (exist) {\n\
@@ -5450,6 +5463,21 @@ Model.prototype.validate = function (doc, opts) {\n\
 };\n\
 \n\
 /**\n\
+ * dispose model\n\
+ *\n\
+ * remove from parentArray\n\
+ * remove all listener\n\
+ * and remove model from store\n\
+ */\n\
+\n\
+Model.prototype.dispose = function () {\n\
+  var arr = this.parentArray()\n\
+  if (arr) arr.remove(this);\n\
+  this.schema.store.remove(this);\n\
+  this.off();\n\
+};\n\
+\n\
+/**\n\
  * get JSON representation of this model\n\
  *\n\
  * @return {Object}\n\
@@ -5465,6 +5493,7 @@ Model.prototype.toJSON = function () {\n\
   }, this);\n\
   return obj;\n\
 };\n\
+\n\
 //@ sourceURL=modelfactory/lib/model.js"
 ));
 require.register("modelfactory/lib/utils.js", Function("exports, require, module",
@@ -5542,19 +5571,38 @@ require.register("modelfactory/lib/schema.js", Function("exports, require, modul
 var Types = require('./schema/index'),\n\
     VirtualType = require('./virtualType'),\n\
     utils = require('./utils'),\n\
+    Store = require('./store'),\n\
     hasPath = utils.hasPath;\n\
 \n\
 /**\n\
- * Constructor\n\
+ * create a new Schema\n\
+ *\n\
+ * examples\n\
+ *   schema = new Schema({\n\
+ *     firstname: String,\n\
+ *     lastname: String\n\
+ *   }, {store: true})\n\
+ *\n\
+ * Options are:\n\
+ * store: use internal storage to store models\n\
+ *\n\
  * @param {Object} obj\n\
+ * @param {Object} opts\n\
  */\n\
 \n\
-function Schema(obj) {\n\
+function Schema(obj, opts) {\n\
   this.paths = {};\n\
   this.tree = {};\n\
   this.virtuals = {};\n\
   this.methods = {};\n\
   this.statics = {};\n\
+  this.options = opts || {store: true};\n\
+\n\
+  if (this.options.store) {\n\
+    this.store = new Store();\n\
+  } else {\n\
+    this.store = Store.noop;\n\
+  }\n\
 \n\
   if (obj) this.add(obj);\n\
 }\n\
@@ -5783,6 +5831,83 @@ Schema.prototype.static = function(name, fn) {\n\
   }\n\
   return this;\n\
 };//@ sourceURL=modelfactory/lib/schema.js"
+));
+require.register("modelfactory/lib/store.js", Function("exports, require, module",
+"var noop = function () {};\n\
+\n\
+/**\n\
+ * create a new Store\n\
+ *\n\
+ * examples:\n\
+ *     store = new Store()\n\
+ *     store.add({id: 1, name: 'pg'})\n\
+ *     user = store.get(1)\n\
+ *     store.remove(user)\n\
+ *     store.clear()\n\
+ */\n\
+\n\
+function Store() {\n\
+  this.clear();\n\
+}\n\
+\n\
+/**\n\
+ * clear store\n\
+ */\n\
+\n\
+Store.prototype.clear = function () {\n\
+  this.cache = Object.create(null);\n\
+};\n\
+\n\
+/**\n\
+ * get model in store with specified id\n\
+ *\n\
+ * @param  {String} id\n\
+ * @return {Model}\n\
+ */\n\
+\n\
+Store.prototype.get = function (id) {\n\
+  return this.cache[id];\n\
+};\n\
+\n\
+/**\n\
+ * add model to store\n\
+ *\n\
+ * @param {Model} model\n\
+ */\n\
+\n\
+Store.prototype.add = function (model) {\n\
+  if (model.id) this.cache[model.id] = model;\n\
+};\n\
+\n\
+/**\n\
+ * remove model from store\n\
+ *\n\
+ * @param  {Model} model\n\
+ */\n\
+\n\
+Store.prototype.remove = function (model) {\n\
+  delete this.cache[model.id];\n\
+};\n\
+\n\
+/**\n\
+ *  noop store used in place of a real store instance\n\
+ *  to turn off storing option\n\
+ */\n\
+\n\
+Store.noop = {\n\
+  clear: noop,\n\
+  get: noop,\n\
+  add: noop,\n\
+  remove: noop\n\
+};\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = Store;\n\
+\n\
+//@ sourceURL=modelfactory/lib/store.js"
 ));
 require.register("modelfactory/lib/type.js", Function("exports, require, module",
 "/**\n\

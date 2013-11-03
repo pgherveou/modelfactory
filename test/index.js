@@ -151,7 +151,7 @@ describe('modelfactory specs', function() {
   });
 
   afterEach(function() {
-    user.off();
+    user.dispose();
   });
 
   it('should expose Schema and Error', function() {
@@ -178,6 +178,32 @@ describe('modelfactory specs', function() {
       return new User();
     };
     expect(create).to.not.have.throw();
+  });
+
+  it('should use models saved in backing store to generate new instance', function () {
+    var u1, u1bis;
+    u1 = new User({_id: 1});
+    expect(UserSchema.store.get(1)).to.eq(u1);
+
+    u1bis = new User({_id: 1, email: 'pg@gmail.com'});
+    expect(u1).to.eq(u1bis);
+    expect(UserSchema.store.get(1)).to.eq(u1bis);
+
+    UserSchema.store.remove(u1);
+    expect(UserSchema.store.get(1)).to.be.undefined;
+  });
+
+  it('should use stored item to generate embedded items', function () {
+    var p1, u1;
+    p1 = new Project({_id: 'p1', name: 'project 1', category: 'web'});
+    u1 = new User({
+      email: 'pg@gmail.com',
+      project: {_id: 'p1'},
+      projects: [{_id: 'p1', name: 'project 1', category: 'web'}]
+    });
+
+    expect(u1.project).to.eq(p1);
+    expect(u1.projects[0]).to.eq(p1);
   });
 
   it('should have instance methods', function() {

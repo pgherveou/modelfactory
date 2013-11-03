@@ -21,6 +21,7 @@
     "lib/utils.js",
     "lib/globals.js",
     "lib/schema.js",
+    "lib/store.js",
     "lib/type.js",
     "lib/schemaType.js",
     "lib/virtualType.js",
