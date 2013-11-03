@@ -100,8 +100,8 @@ should work on any browser supporting [Object.defineProperty](https://developer.
 
 # Credits
 
-  - [Mongoose](mongoosejs.com)
-  - [Backbone](backbonejs.org)
+  - [Mongoose](http://mongoosejs.com)
+  - [Backbone](http://backbonejs.org)
 
 ## License
 
