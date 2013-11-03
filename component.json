@@ -2,7 +2,7 @@
   "name": "modelfactory",
   "repo": "pgherveou/modelfactory",
   "description": "simple model data model inspired by mongoose",
-  "version": "0.1.6",
+  "version": "0.1.7",
 
   "dependencies": {
     "component/emitter": "*",
