@@ -15,12 +15,13 @@
 ## Example
 
   ```js
-var modelfactory = require('modelfactory');
+var modelfactory = require('modelfactory'),
+    regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
 
 // create a User Model
 
 var User = modelfactory.model({
-  email: {type: String, required: true, match: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/},
+  email: {type: String, required: true, match: regex},
   age: {type: Number, min: 13},
   date: {type: Date, default: Date.now},
   name: {
