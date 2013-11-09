@@ -1,4 +1,10 @@
 
+0.1.8 / 2013-11-09
+==================
+
+ * add pick method
+ * allow array option in validate
+
 0.1.7 / 2013-11-02
 ==================
 
