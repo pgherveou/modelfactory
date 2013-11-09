@@ -5066,11 +5066,10 @@ define = function define(prop, subprops, prototype, prefix) {\n\
         if (!this.__getters[path]) {\n\
           var nested = {};\n\
 \n\
-          if (!prefix) {\n\
-            nested.__scope = this;\n\
-          } else {\n\
-            nested.__scope = this.__scope;\n\
-          }\n\
+          // set scope\n\
+          Object.defineProperty(nested, '__scope__', {\n\
+            value: prefix ? this.__scope__ : this\n\
+          });\n\
 \n\
           compile(subprops, nested, path);\n\
           this.__getters[path] = nested;\n\
@@ -5079,7 +5078,7 @@ define = function define(prop, subprops, prototype, prefix) {\n\
       },\n\
 \n\
       set: function (v) {\n\
-        (this.__scope || this).set(path, v);\n\
+        (this.__scope__ || this).set(path, v);\n\
       }\n\
     });\n\
   } else {\n\
@@ -5087,13 +5086,13 @@ define = function define(prop, subprops, prototype, prefix) {\n\
       enumerable: true,\n\
 \n\
       get: function () {\n\
-        if (this.__scope) return this.__scope.get(path);\n\
+        if (this.__scope__) return this.__scope__.get(path);\n\
         if (this.get) return this.get(path);\n\
         return this[path];\n\
       },\n\
 \n\
       set: function (v) {\n\
-        (this.__scope || this).set(path, v);\n\
+        (this.__scope__ || this).set(path, v);\n\
       }\n\
     });\n\
   }\n\
@@ -5445,6 +5444,8 @@ Model.prototype.validate = function (doc, opts) {\n\
     paths = opts.split(' ');\n\
   } else if ('string' === typeof opts.paths) {\n\
     paths = opts.paths.split(' ');\n\
+  } else if (Array.isArray(opts)) {\n\
+    paths = opts;\n\
   } else if (Array.isArray(opts.paths)) {\n\
     paths = opts.paths;\n\
   }\n\
@@ -5471,10 +5472,28 @@ Model.prototype.validate = function (doc, opts) {\n\
  */\n\
 \n\
 Model.prototype.dispose = function () {\n\
-  var arr = this.parentArray()\n\
+  var arr = this.parentArray();\n\
   if (arr) arr.remove(this);\n\
   this.schema.store.remove(this);\n\
   this.off();\n\
+};\n\
+\n\
+/**\n\
+ * extract specified properties\n\
+ *\n\
+ * @param {string} ppties space separated list of properties\n\
+ * @return {Object}\n\
+ * @api public\n\
+ */\n\
+\n\
+Model.prototype.pick = function (ppties) {\n\
+  var obj = {};\n\
+  ppties.split(' ').forEach(function (key) {\n\
+    obj[key] = (this._doc[key] && this._doc[key].toJSON)\n\
+             ? this._doc[key].toJSON()\n\
+             : this._doc[key];\n\
+  }, this);\n\
+  return obj;\n\
 };\n\
 \n\
 /**\n\
@@ -6831,6 +6850,10 @@ EmbeddedDocument.prototype.doValidate = function (model) {\n\
 module.exports = EmbeddedDocument;\n\
 //@ sourceURL=modelfactory/lib/schema/embedded.js"
 ));
+
+
+
+
 
 
 

@@ -25,7 +25,7 @@ module.exports = function(grunt) {
         options: {
           port: 3000,
           base: '',
-          livereload: true,
+          livereload: 35730,
           open: 'http://localhost:3000/test'
         }
       }
@@ -42,7 +42,7 @@ module.exports = function(grunt) {
 
     watch: {
       options: {
-        livereload: true,
+        livereload: 35730,
         spawn: false
       },
       js: {

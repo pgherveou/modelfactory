@@ -244,6 +244,13 @@ describe('modelfactory specs', function() {
     expect(user.getValue('creditcard')).to.eq('123-456-789');
   });
 
+  it ('should pick values', function(){
+    expect(user.pick('email sex')).to.deep.eq({
+      email: user.email,
+      sex: user.sex
+    });
+  });
+
   it('should set property', function() {
     var newMail = 'john.mcenroe@gmail.com';
     user.on('change:email', function(email, u) {
@@ -268,9 +275,14 @@ describe('modelfactory specs', function() {
     expect(user.tags[i-1]).to.eq('3');
   });
 
+  it ('should return undefined for unset embedded value', function() {
+    var u1 = new User();
+    expect(u1.project).to.be.undefined;
+  });
+
   it('should cast embedded value', function () {
     var p1, p2;
-     p1 = {
+    p1 = {
         name: 'current project',
         category: 'web'
       };
