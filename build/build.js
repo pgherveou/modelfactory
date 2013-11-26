@@ -5158,8 +5158,11 @@ modelfactory.model = function (schema) {\n\
     }\n\
 \n\
     Object.defineProperty(this, '_doc', {value: Object.create(null)});\n\
-    Object.defineProperty(this, '_callbacks', {value: Object.create(null)});\n\
     Object.defineProperty(this, 'schema', {value: schema});\n\
+    Object.defineProperty(this, '_callbacks', {\n\
+        value: Object.create(null),\n\
+        writable: true\n\
+      });\n\
 \n\
     this.cid = uniqueId();\n\
     this.id = id;\n\
@@ -5233,10 +5236,10 @@ module.exports = Model;\n\
 \n\
 Object.defineProperty(Model.prototype, 'id', {\n\
   get: function () {\n\
-    return this._doc[globals.idAttribute];\n\
+    return this[globals.idAttribute];\n\
   },\n\
   set: function (val) {\n\
-    this._doc[globals.idAttribute] = val;\n\
+    this.set(globals.idAttribute, val);\n\
   }\n\
 });\n\
 \n\
@@ -5249,7 +5252,7 @@ Object.defineProperty(Model.prototype, 'id', {\n\
 \n\
 Object.defineProperty(Model.prototype, 'isNew', {\n\
   get: function () {\n\
-    return !!this.id;\n\
+    return !this.id;\n\
   }\n\
 });\n\
 \n\
@@ -5591,6 +5594,7 @@ var Types = require('./schema/index'),\n\
     VirtualType = require('./virtualType'),\n\
     utils = require('./utils'),\n\
     Store = require('./store'),\n\
+    globals = require('./globals'),\n\
     hasPath = utils.hasPath;\n\
 \n\
 /**\n\
@@ -5610,6 +5614,8 @@ var Types = require('./schema/index'),\n\
  */\n\
 \n\
 function Schema(obj, opts) {\n\
+  if (!obj) obj = {};\n\
+\n\
   this.paths = {};\n\
   this.tree = {};\n\
   this.virtuals = {};\n\
@@ -5623,7 +5629,12 @@ function Schema(obj, opts) {\n\
     this.store = Store.noop;\n\
   }\n\
 \n\
-  if (obj) this.add(obj);\n\
+  // add id key if not present\n\
+  if (!obj.hasOwnProperty(globals.idAttribute)) {\n\
+    obj[globals.idAttribute] = {type: String};\n\
+  }\n\
+\n\
+  this.add(obj);\n\
 }\n\
 \n\
 /**\n\

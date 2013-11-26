@@ -264,6 +264,19 @@ describe('modelfactory specs', function() {
     expect(user.toJSON().email).to.eq(newMail);
   });
 
+  it ('should set id', function () {
+    user.id = 'foo';
+    expect(user.id).to.eq('foo');
+
+    user.set({_id: 'bar'});
+    expect(user.id).to.eq('bar');
+
+    user.set('_id', 'boo');
+    expect(user.id).to.eq('boo');
+
+
+  });
+
   it('should cast value', function () {
     user.age = '30';
     expect(user.age).to.eq(30);
