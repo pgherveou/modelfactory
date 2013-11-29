@@ -4984,7 +4984,8 @@ require.register("modelfactory/lib/index.js", Function("exports, require, module
  * deps\n\
  */\n\
 \n\
-var Schema = require('./schema'),\n\
+var ModelArray = require('modelarray'),\n\
+    Schema = require('./schema'),\n\
     Model = require('./model'),\n\
     globals = require('./globals'),\n\
     Errors = require('./errors'),\n\
@@ -5189,6 +5190,11 @@ modelfactory.model = function (schema) {\n\
   // attach schema\n\
   model.schema = schema;\n\
 \n\
+  // attach collection method\n\
+  model.collection = function (arr) {\n\
+    return new ModelArray(arr, model);\n\
+  };\n\
+\n\
   return model;\n\
 };\n\
 \n\
@@ -5227,8 +5233,8 @@ Model.prototype.__proto__ = Emitter.prototype;\n\
 \n\
 module.exports = Model;\n\
 \n\
-/**\n\
- * get model id using _id property\n\
+/*!\n\
+ * get model id using idAttribute property\n\
  *\n\
  * @property id\n\
  * @api public\n\

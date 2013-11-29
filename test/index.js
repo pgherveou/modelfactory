@@ -1,6 +1,7 @@
 /*global describe:true,beforeEach:true,afterEach:true,it:true*/
 
 var modelfactory = require(this.window ? 'modelfactory' : '..'),
+    ModelArray = require('modelarray'),
     chai = require('chai'),
     expect = chai.expect,
     model = modelfactory.model,
@@ -249,6 +250,13 @@ describe('modelfactory specs', function() {
       email: user.email,
       sex: user.sex
     });
+  });
+
+  it('should create a user collection', function () {
+    var collection = User.collection([user]);
+    expect(collection).to.be.an.instanceof(ModelArray);
+    expect(collection.model).to.eq(User);
+    expect(collection).to.have.length(1);
   });
 
   it('should set property', function() {
