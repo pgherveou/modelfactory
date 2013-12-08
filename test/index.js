@@ -319,11 +319,15 @@ describe('modelfactory specs', function() {
     expect(user.project).to.be.instanceof(ProjectSchema.model);
 
     p2 = new ProjectSchema.model({
+      _id: '2',
       name: 'other project',
       category: 'web'
     });
 
     user.project = p2;
+    expect(user.project).to.eq(p2);
+
+    user.project = '2'
     expect(user.project).to.eq(p2);
   });
 
