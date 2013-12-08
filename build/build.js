@@ -5262,6 +5262,22 @@ Object.defineProperty(Model.prototype, 'isNew', {\n\
   }\n\
 });\n\
 \n\
+\n\
+function (doc) {\n\
+  var tid = this.id;\n\
+  var docid = doc.get('_id');\n\
+  return tid && tid.equals\n\
+    ? tid.equals(docid)\n\
+    : tid === docid;\n\
+  }\n\
+\n\
+Model.prototype.equals = function (doc) {\n\
+  if (doc === this) return true;\n\
+  var docId = doc[globals.idAttribute] || doc;\n\
+  if (!docid) return false;\n\
+  return docid === this.id;\n\
+};\n\
+\n\
 /**\n\
  * Get property using schema getters\n\
  *\n\

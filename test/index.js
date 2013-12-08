@@ -272,7 +272,7 @@ describe('modelfactory specs', function() {
     expect(user.toJSON().email).to.eq(newMail);
   });
 
-  it ('should set id', function () {
+  it('should set id', function () {
     user.id = 'foo';
     expect(user.id).to.eq('foo');
 
@@ -281,8 +281,15 @@ describe('modelfactory specs', function() {
 
     user.set('_id', 'boo');
     expect(user.id).to.eq('boo');
+  });
 
-
+  it('should equals other model', function() {
+    var u = new User();
+    expect(u.equals(u)).to.be.true;
+    expect(new User({ _id: '1' }).equals(new User({ _id: '1' }))).to.be.true;
+    expect(new User({ _id: '1' }).equals(new User({ _id: '2' }))).to.be.false;
+    expect(new User({ _id: '1' }).equals(new User())).to.be.false;
+    expect(new User().equals(new User())).to.be.false;
   });
 
   it('should cast value', function () {
