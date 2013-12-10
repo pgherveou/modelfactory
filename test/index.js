@@ -252,13 +252,6 @@ describe('modelfactory specs', function() {
     });
   });
 
-  it('should create a user collection', function () {
-    var collection = User.collection([user]);
-    expect(collection).to.be.an.instanceof(ModelArray);
-    expect(collection.model).to.eq(User);
-    expect(collection).to.have.length(1);
-  });
-
   it('should set property', function() {
     var newMail = 'john.mcenroe@gmail.com';
     user.on('change:email', function(email, u) {

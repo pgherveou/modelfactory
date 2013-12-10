@@ -5263,19 +5263,18 @@ Object.defineProperty(Model.prototype, 'isNew', {\n\
 });\n\
 \n\
 \n\
-function (doc) {\n\
-  var tid = this.id;\n\
-  var docid = doc.get('_id');\n\
-  return tid && tid.equals\n\
-    ? tid.equals(docid)\n\
-    : tid === docid;\n\
-  }\n\
+/**\n\
+ * compare to models\n\
+ *\n\
+ * @param  {Model} doc\n\
+ * @return {Boolean}\n\
+ */\n\
 \n\
 Model.prototype.equals = function (doc) {\n\
   if (doc === this) return true;\n\
-  var docId = doc[globals.idAttribute] || doc;\n\
-  if (!docid) return false;\n\
-  return docid === this.id;\n\
+  var id = doc[globals.idAttribute];\n\
+  if (!id) return false;\n\
+  return id === this.id;\n\
 };\n\
 \n\
 /**\n\
@@ -6805,7 +6804,8 @@ require.register("modelfactory/lib/schema/embedded.js", Function("exports, requi
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
+var SchemaType = require('../schemaType'),\n\
+    globals = require('../globals');\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -6842,6 +6842,10 @@ EmbeddedDocument.prototype.cast = function (value, doc) {\n\
   var model;\n\
   if (value instanceof this.schema.model) {\n\
     model = value;\n\
+  } else if (typeof value === 'string') {\n\
+    var obj = {};\n\
+    obj[globals.idAttribute] = value;\n\
+    model = new this.schema.model(obj);\n\
   } else {\n\
     model = new this.schema.model(value);\n\
   }\n\
