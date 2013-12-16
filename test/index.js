@@ -185,6 +185,7 @@ describe('modelfactory specs', function() {
     var u1, u1bis;
     u1 = new User({_id: 1});
     expect(UserSchema.store.get(1)).to.eq(u1);
+    expect(UserSchema.store.getBy('id', 1)).to.eq(u1);
 
     u1bis = new User({_id: 1, email: 'pg@gmail.com'});
     expect(u1).to.eq(u1bis);
