@@ -1,7 +1,6 @@
 /*global describe:true,beforeEach:true,afterEach:true,it:true*/
 
 var modelfactory = require(this.window ? 'modelfactory' : '..'),
-    ModelArray = require('modelarray'),
     chai = require('chai'),
     expect = chai.expect,
     model = modelfactory.model,
@@ -69,6 +68,11 @@ var UserSchema = new Schema({
     project: {type: ProjectSchema, required: true},
 
     projects: [ProjectSchema],
+
+    projects2: {
+      type: [ProjectSchema],
+      default: []
+    },
 
     tags: [{type: String, enum: ['js', 'html']}],
 
@@ -321,7 +325,7 @@ describe('modelfactory specs', function() {
     user.project = p2;
     expect(user.project).to.eq(p2);
 
-    user.project = '2'
+    user.project = '2';
     expect(user.project).to.eq(p2);
   });
 
@@ -332,6 +336,7 @@ describe('modelfactory specs', function() {
 
   it('should get array default values', function () {
     expect(new User().keywords.slice()).to.deep.eq(['one', 'two']);
+    expect(new User().projects2).to.be.ok;
   });
 
   it('should set property with setter', function() {

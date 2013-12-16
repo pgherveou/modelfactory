@@ -4984,8 +4984,7 @@ require.register("modelfactory/lib/index.js", Function("exports, require, module
  * deps\n\
  */\n\
 \n\
-var ModelArray = require('modelarray'),\n\
-    Schema = require('./schema'),\n\
+var Schema = require('./schema'),\n\
     Model = require('./model'),\n\
     globals = require('./globals'),\n\
     Errors = require('./errors'),\n\
@@ -5189,11 +5188,6 @@ modelfactory.model = function (schema) {\n\
 \n\
   // attach schema\n\
   model.schema = schema;\n\
-\n\
-  // attach collection method\n\
-  model.collection = function (arr) {\n\
-    return new ModelArray(arr, model);\n\
-  };\n\
 \n\
   return model;\n\
 };\n\
@@ -5898,15 +5892,41 @@ require.register("modelfactory/lib/store.js", Function("exports, require, module
  */\n\
 \n\
 function Store() {\n\
+  this.caches = Object.create(null);\n\
+  this.indexes = [];\n\
+  this.index('id');\n\
   this.clear();\n\
 }\n\
+\n\
+/**\n\
+ * add Index\n\
+ */\n\
+\n\
+Store.prototype.index = function (name) {\n\
+  this.indexes.push(name);\n\
+  this.caches[name] = Object.create(null);\n\
+};\n\
 \n\
 /**\n\
  * clear store\n\
  */\n\
 \n\
 Store.prototype.clear = function () {\n\
-  this.cache = Object.create(null);\n\
+  this.indexes.forEach(function (index) {\n\
+    this.caches[index] = Object.create(null);\n\
+  }, this);\n\
+};\n\
+\n\
+/**\n\
+ * get model in store with specified index and value\n\
+ *\n\
+ * @param  {String} index\n\
+ * @param  {String} value\n\
+ * @return {Model}\n\
+ */\n\
+\n\
+Store.prototype.getBy = function (index, value) {\n\
+  return this.caches[index][value];\n\
 };\n\
 \n\
 /**\n\
@@ -5917,7 +5937,7 @@ Store.prototype.clear = function () {\n\
  */\n\
 \n\
 Store.prototype.get = function (id) {\n\
-  return this.cache[id];\n\
+  return this.caches.id[id];\n\
 };\n\
 \n\
 /**\n\
@@ -5927,7 +5947,10 @@ Store.prototype.get = function (id) {\n\
  */\n\
 \n\
 Store.prototype.add = function (model) {\n\
-  if (model.id) this.cache[model.id] = model;\n\
+  this.indexes.forEach(function (index) {\n\
+    var key = model[index];\n\
+    if (key) this.caches[index][key] = model;\n\
+  }, this);\n\
 };\n\
 \n\
 /**\n\
@@ -5937,7 +5960,9 @@ Store.prototype.add = function (model) {\n\
  */\n\
 \n\
 Store.prototype.remove = function (model) {\n\
-  delete this.cache[model.id];\n\
+  this.indexes.forEach(function (index) {\n\
+    delete this.caches[index][model.id];\n\
+  }, this);\n\
 };\n\
 \n\
 /**\n\
@@ -5948,6 +5973,7 @@ Store.prototype.remove = function (model) {\n\
 Store.noop = {\n\
   clear: noop,\n\
   get: noop,\n\
+  getBy: noop,\n\
   add: noop,\n\
   remove: noop\n\
 };\n\
@@ -6065,14 +6091,10 @@ Type.prototype.cast = function (v) {\n\
  */\n\
 \n\
 Type.prototype.default = function (val) {\n\
-  if (1 === arguments.length) {\n\
-    this.defaultValue = typeof val === 'function'\n\
-      ? val\n\
-      : this.cast(val);\n\
-    return this;\n\
-  } else if (arguments.length > 1) {\n\
-    this.defaultValue = [].slice.apply(arguments);\n\
-  }\n\
+  this.defaultValue = typeof val === 'function'\n\
+    ? val\n\
+    : this.cast(val);\n\
+  return this;\n\
 };\n\
 \n\
 /**\n\
@@ -6114,12 +6136,10 @@ function SchemaType(name, options, instance) {\n\
   this.validators = [];\n\
 \n\
   Object.keys(options).forEach(function(name) {\n\
-    var fn = this[name],\n\
-        opts;\n\
+    var fn = this[name];\n\
 \n\
     if (fn && 'function' === typeof fn) {\n\
-      opts = Array.isArray(options[name]) ? options[name] : [options[name]];\n\
-      this[name].apply(this, opts);\n\
+      this[name].call(this, options[name]);\n\
     }\n\
   }, this);\n\
 }\n\
@@ -6316,9 +6336,9 @@ module.exports = types;\n\
  * get Schema Type from Schema definition\n\
  *\n\
  * Example:\n\
- *   foo: {type: String} -> StringType\n\
- *   foo: {type: 'String'} -> StringType\n\
- *   foo: String -> StringType\n\
+ *   foo: {type: String} -> String\n\
+ *   foo: {type: 'String'} -> String\n\
+ *   foo: String -> String\n\
  *\n\
  * @param  {Type} type\n\
  * @return {SchemaType}\n\
@@ -6587,9 +6607,8 @@ StringType.prototype.match = function(regExp) {\n\
  * @api public\n\
  */\n\
 \n\
-StringType.prototype.enum = function() {\n\
-  var values = [].slice.apply(arguments),\n\
-      check = function(v) {\n\
+StringType.prototype.enum = function(values) {\n\
+  var check = function(v) {\n\
         if (!v) return true;\n\
         return (values.indexOf(v) === -1) ? false: true;\n\
       };\n\
