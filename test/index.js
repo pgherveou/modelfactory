@@ -82,6 +82,13 @@ var UserSchema = new Schema({
       max: 3
     },
 
+    stuffs: [
+      {
+        foo: String,
+        bar: Boolean
+      }
+    ],
+
     name: {
       first: {
         type: String,

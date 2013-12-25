@@ -5121,7 +5121,7 @@ modelfactory.plugin = function (fn, opts) {\n\
  * example:\n\
  *   User = modelfactory.model({\n\
  *     firstname: String,\n\
- *     lastnae: String,\n\
+ *     lastname: String,\n\
  *   })\n\
  *\n\
  * @param  {Schema} schema\n\
@@ -5631,6 +5631,7 @@ var Types = require('./schema/index'),\n\
 function Schema(obj, opts) {\n\
   if (!obj) obj = {};\n\
 \n\
+  this.name = 'Schema';\n\
   this.paths = {};\n\
   this.tree = {};\n\
   this.virtuals = {};\n\
@@ -6698,6 +6699,7 @@ function DocumentArray(key, options) {\n\
   this.DocArray.prototype.__proto__ = ModelArray.prototype;\n\
 \n\
   // if we have a schema generate Array models\n\
+  console.log(schema.name);\n\
   if (schema.constructor.name === 'Schema' ||\n\
       schema.constructor.name === 'Object') {\n\
     Model = DocumentArray.model(schema);\n\
