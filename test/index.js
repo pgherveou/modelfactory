@@ -115,6 +115,7 @@ UserSchema.path('name.last').set(function(v) {
 });
 
 UserSchema.path('creditcard').get(function(v) {
+  if (!v) return v;
   return v.slice(0, 3) + '**********';
 });
 
@@ -286,6 +287,14 @@ describe('modelfactory specs', function() {
 
     user.set('_id', 'boo');
     expect(user.id).to.eq('boo');
+  });
+
+  it('should set null value', function() {
+    user.project = null;
+    user.creditcard = null;
+    expect(user.project).to.be.null;
+    expect(user.creditcard).to.be.null;
+
   });
 
   it('should equals other model', function() {
