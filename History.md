@@ -1,4 +1,10 @@
 
+0.1.25 / 2014-01-06
+==================
+
+ * fix type resolution after mangling for non standard types
+ * fix test for latest component build
+
 0.1.24 / 2013-12-28
 ==================
 
