@@ -1,7 +1,7 @@
 /*global describe:true,beforeEach:true,afterEach:true,it:true*/
 
 var modelfactory = require(this.window ? 'modelfactory' : '..'),
-    chai = require('chai'),
+    chai = require(this.window ? 'chaijs-chai' : 'chai'),
     expect = chai.expect,
     model = modelfactory.model,
     Schema = modelfactory.Schema,

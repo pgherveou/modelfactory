@@ -31,6 +31,16 @@ module.exports = function(grunt) {
       }
     },
 
+    uglify: {
+      build: {
+        files: {
+          'build/build.js': 'build/build.js'
+        }
+      }
+    },
+
+
+
     shell: {
       build: {
         command: 'component build --dev',
@@ -54,6 +64,7 @@ module.exports = function(grunt) {
   });
 
   grunt.loadNpmTasks('grunt-shell');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
@@ -63,6 +74,12 @@ module.exports = function(grunt) {
     'clean',
     'shell:build'
   ]);
+
+  grunt.registerTask('build', [
+    'default',
+    'uglify'
+  ]);
+
 
   grunt.registerTask('dev', [
     'default',
