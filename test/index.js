@@ -127,6 +127,10 @@ UserSchema.static('version', function() {
   return '0.1';
 });
 
+UserSchema.virtual('boo')
+  .get(function() { return this._boo; })
+  .set(function(v) { this._boo = v; });
+
 UserSchema.virtual('name.full').get(function() {
   return this.name.first + ' ' + this.name.last;
 });
@@ -294,7 +298,11 @@ describe('modelfactory specs', function() {
     user.creditcard = null;
     expect(user.project).to.be.null;
     expect(user.creditcard).to.be.null;
+  });
 
+  it('should set virtual values', function() {
+    var u = new User({boo: 'boo'});
+    expect(u.boo).to.eq('boo');
   });
 
   it('should equals other model', function() {
