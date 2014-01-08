@@ -5354,19 +5354,29 @@ Model.prototype.set = function (key, val, opts) {\n\
   paths.forEach(function (keyval) {\n\
     var key = keyval.key,\n\
         val = keyval.val,\n\
+        old,\n\
         schema;\n\
 \n\
-    // return if value has not changed\n\
-    if (getPath(this._doc, key) === val) return;\n\
-\n\
-    // get path's schema\n\
     schema = this.schema.path(key) || this.schema.virtualpath(key);\n\
 \n\
-    // apply setters\n\
-    val = schema.applySetters(val, this);\n\
+    if (schema.instance !== 'virtual') {\n\
 \n\
-    // apply value\n\
-    if (schema.instance !== 'virtual') setPath(this._doc, key, val);\n\
+      // get old\n\
+      old = getPath(this._doc, key);\n\
+\n\
+      // return if value has not changed\n\
+      if (old === val) return;\n\
+\n\
+      // apply setters\n\
+      val = schema.applySetters(val, this);\n\
+\n\
+      // apply value\n\
+      setPath(this._doc, key, val);\n\
+\n\
+    } else {\n\
+      // apply setters\n\
+      return schema.applySetters(val, this);\n\
+    }\n\
 \n\
     // trigger events\n\
     if (!silent) {\n\
@@ -5840,6 +5850,19 @@ Schema.prototype.getKeyVals = function (obj, prefix) {\n\
         });\n\
       }\n\
     });\n\
+\n\
+  Object\n\
+    .keys(this.virtuals)\n\
+    .forEach(function (key) {\n\
+    var exist = hasPath(o, key);\n\
+    if (exist) {\n\
+      ret.push({\n\
+        key: key,\n\
+        val: exist.val\n\
+      });\n\
+    }\n\
+  });\n\
+\n\
   return ret;\n\
 };\n\
 \n\

@@ -301,8 +301,14 @@ describe('modelfactory specs', function() {
   });
 
   it('should set virtual values', function() {
-    var u = new User({boo: 'boo'});
-    expect(u.boo).to.eq('boo');
+    var u = new User({boo: 1});
+    expect(u.boo).to.eq(1);
+
+    u.boo = 2;
+    expect(u.boo).to.eq(2);
+
+    u.set({boo: 3});
+    expect(u.boo).to.eq(3);
   });
 
   it('should equals other model', function() {
