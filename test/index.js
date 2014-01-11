@@ -198,10 +198,11 @@ describe('modelfactory specs', function() {
   });
 
   it('should use models saved in backing store to generate new instance', function () {
-    var u1, u1bis;
-    u1 = new User({_id: 1});
+    var u1, u2, u1bis;
+    u1 = new User({ _id: 1 });
+
     expect(UserSchema.store.get(1)).to.eq(u1);
-    expect(UserSchema.store.getBy('id', 1)).to.eq(u1);
+    expect(UserSchema.store.getBy('_id', 1)).to.eq(u1);
 
     u1bis = new User({_id: 1, email: 'pg@gmail.com'});
     expect(u1).to.eq(u1bis);
@@ -209,6 +210,14 @@ describe('modelfactory specs', function() {
 
     UserSchema.store.remove(u1);
     expect(UserSchema.store.get(1)).to.be.undefined;
+
+    u2 = new User();
+    u2.id = 2;
+    expect(UserSchema.store.get(2)).to.eq(u2);
+    u2.id = 3;
+
+    expect(UserSchema.store.get(2)).to.be.undefined;
+    expect(UserSchema.store.get(3)).to.eq(u2);
   });
 
   it('should use stored item to generate embedded items', function () {

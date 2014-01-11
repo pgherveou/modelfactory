@@ -5168,9 +5168,6 @@ modelfactory.model = function (schema) {\n\
     this.id = id;\n\
     this._build(obj);\n\
     this.emit('init', this);\n\
-\n\
-    // add to store\n\
-    schema.store.add(this);\n\
   }\n\
 \n\
   // store generated model\n\
@@ -5330,6 +5327,7 @@ Model.prototype.set = function (key, val, opts) {\n\
   var paths = [],\n\
       changedPaths = [],\n\
       parent = this._parentArray,\n\
+      store = this.schema.store,\n\
       silent, schema, path, ev, parts;\n\
 \n\
   // handle model.set(key, val)\n\
@@ -5372,6 +5370,12 @@ Model.prototype.set = function (key, val, opts) {\n\
 \n\
       // apply value\n\
       setPath(this._doc, key, val);\n\
+\n\
+      // update index if necessary\n\
+      if (store.indexes.indexOf(key) !== -1) {\n\
+        if (old) store.unsetIndex(key, old);\n\
+        if (val) store.setIndex(this, key, val);\n\
+      }\n\
 \n\
     } else {\n\
       // apply setters\n\
@@ -5915,7 +5919,8 @@ Schema.prototype.static = function(name, fn) {\n\
 };//@ sourceURL=modelfactory/lib/schema.js"
 ));
 require.register("modelfactory/lib/store.js", Function("exports, require, module",
-"var noop = function () {};\n\
+"var globals = require('./globals');\n\
+var noop = function () {};\n\
 \n\
 /**\n\
  * create a new Store\n\
@@ -5931,7 +5936,7 @@ require.register("modelfactory/lib/store.js", Function("exports, require, module
 function Store() {\n\
   this.caches = Object.create(null);\n\
   this.indexes = [];\n\
-  this.index('id');\n\
+  this.index(globals.idAttribute);\n\
   this.clear();\n\
 }\n\
 \n\
@@ -5967,14 +5972,14 @@ Store.prototype.getBy = function (index, value) {\n\
 };\n\
 \n\
 /**\n\
- * get model in store with specified id\n\
+ * get model in store with idAttribute\n\
  *\n\
  * @param  {String} id\n\
  * @return {Model}\n\
  */\n\
 \n\
 Store.prototype.get = function (id) {\n\
-  return this.caches.id[id];\n\
+  return this.caches[globals.idAttribute][id];\n\
 };\n\
 \n\
 /**\n\
@@ -5998,8 +6003,17 @@ Store.prototype.add = function (model) {\n\
 \n\
 Store.prototype.remove = function (model) {\n\
   this.indexes.forEach(function (index) {\n\
-    delete this.caches[index][model.id];\n\
+    var key = model[index];\n\
+    delete this.caches[index][key];\n\
   }, this);\n\
+};\n\
+\n\
+Store.prototype.setIndex = function(model, index, key) {\n\
+  this.caches[index][key] = model;\n\
+};\n\
+\n\
+Store.prototype.unsetIndex = function(index, key) {\n\
+  delete this.caches[index][key];\n\
 };\n\
 \n\
 /**\n\
@@ -6012,7 +6026,9 @@ Store.noop = {\n\
   get: noop,\n\
   getBy: noop,\n\
   add: noop,\n\
-  remove: noop\n\
+  remove: noop,\n\
+  setIndex: noop,\n\
+  unsetIndex: noop\n\
 };\n\
 \n\
 /*!\n\
