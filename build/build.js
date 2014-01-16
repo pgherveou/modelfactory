@@ -5148,8 +5148,7 @@ modelfactory.model = function (schema) {\n\
   function model (obj) {\n\
     if (!obj) obj = {};\n\
 \n\
-    var id = obj[globals.idAttribute],\n\
-        existing = schema.store.get(id);\n\
+    var existing = schema.store.get(obj);\n\
 \n\
     // return existing model\n\
     if (existing) {\n\
@@ -5165,7 +5164,7 @@ modelfactory.model = function (schema) {\n\
       });\n\
 \n\
     this.cid = uniqueId();\n\
-    this.id = id;\n\
+    this.id = obj[globals.idAttribute];\n\
     this._build(obj);\n\
     this.emit('init', this);\n\
   }\n\
@@ -5428,6 +5427,7 @@ Model.prototype.set = function (key, val, opts) {\n\
  */\n\
 \n\
 Model.prototype._build = function (obj) {\n\
+  var store = this.schema.store;\n\
 \n\
   Object\n\
     .keys(this.schema.paths)\n\
@@ -5447,6 +5447,11 @@ Model.prototype._build = function (obj) {\n\
       // apply setters\n\
       val = schema.applySetters(val, this);\n\
       setPath(this._doc, key, val);\n\
+\n\
+      // add index\n\
+      if (val && store.indexes.indexOf(key) !== -1) {\n\
+        store.setIndex(this, key, val);\n\
+      }\n\
 \n\
     }, this);\n\
 \n\
@@ -5928,7 +5933,7 @@ var noop = function () {};\n\
  * examples:\n\
  *     store = new Store()\n\
  *     store.add({id: 1, name: 'pg'})\n\
- *     user = store.get(1)\n\
+ *     user = store.get({id: 1})\n\
  *     store.remove(user)\n\
  *     store.clear()\n\
  */\n\
@@ -5974,12 +5979,22 @@ Store.prototype.getBy = function (index, value) {\n\
 /**\n\
  * get model in store with idAttribute\n\
  *\n\
- * @param  {String} id\n\
+ * @param  {Object} doc\n\
  * @return {Model}\n\
  */\n\
 \n\
-Store.prototype.get = function (id) {\n\
-  return this.caches[globals.idAttribute][id];\n\
+Store.prototype.get = function (doc) {\n\
+  if (!doc) return null;\n\
+\n\
+  var len = this.indexes.length,\n\
+      index, value, found;\n\
+\n\
+  for (var i = 0; i < len; i++) {\n\
+    index = this.indexes[i];\n\
+    value = doc[index];\n\
+    found = value && this.getBy(index, value);\n\
+    if (found) return found;\n\
+  }\n\
 };\n\
 \n\
 /**\n\

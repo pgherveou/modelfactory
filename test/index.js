@@ -110,6 +110,9 @@ var UserSchema = new Schema({
     }
   });
 
+
+UserSchema.store.index('email');
+
 UserSchema.path('name.last').set(function(v) {
   return v[0].toUpperCase() + v.slice(1);
 });
@@ -198,26 +201,30 @@ describe('modelfactory specs', function() {
   });
 
   it('should use models saved in backing store to generate new instance', function () {
-    var u1, u2, u1bis;
-    u1 = new User({ _id: 1 });
+    var doc = { _id: 1, email: 'test@gmail.com' },
+        u1 = new User(doc),
+        u2, u1bis;
 
-    expect(UserSchema.store.get(1)).to.eq(u1);
+    expect(UserSchema.store.get(doc)).to.eq(u1);
+    expect(UserSchema.store.get({ _id: 1 })).to.eq(u1);
+    expect(UserSchema.store.get({ email: 'test@gmail.com' })).to.eq(u1);
     expect(UserSchema.store.getBy('_id', 1)).to.eq(u1);
+    expect(UserSchema.store.getBy('email', 'test@gmail.com')).to.eq(u1);
 
     u1bis = new User({_id: 1, email: 'pg@gmail.com'});
     expect(u1).to.eq(u1bis);
-    expect(UserSchema.store.get(1)).to.eq(u1bis);
+    expect(UserSchema.store.getBy('_id', 1)).to.eq(u1bis);
 
     UserSchema.store.remove(u1);
-    expect(UserSchema.store.get(1)).to.be.undefined;
+    expect(UserSchema.store.getBy('_id', 1)).to.be.undefined;
 
     u2 = new User();
     u2.id = 2;
-    expect(UserSchema.store.get(2)).to.eq(u2);
+    expect(UserSchema.store.getBy('_id', 2)).to.eq(u2);
     u2.id = 3;
 
-    expect(UserSchema.store.get(2)).to.be.undefined;
-    expect(UserSchema.store.get(3)).to.eq(u2);
+    expect(UserSchema.store.getBy('_id', 2)).to.be.undefined;
+    expect(UserSchema.store.getBy('_id', 3)).to.eq(u2);
   });
 
   it('should use stored item to generate embedded items', function () {
