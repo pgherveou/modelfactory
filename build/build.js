@@ -5371,7 +5371,7 @@ Model.prototype.set = function (key, val, opts) {\n\
       setPath(this._doc, key, val);\n\
 \n\
       // update index if necessary\n\
-      if (store.indexes.indexOf(key) !== -1) {\n\
+      if (store.hasIndex(key)) {\n\
         if (old) store.unsetIndex(key, old);\n\
         if (val) store.setIndex(this, key, val);\n\
       }\n\
@@ -5449,7 +5449,7 @@ Model.prototype._build = function (obj) {\n\
       setPath(this._doc, key, val);\n\
 \n\
       // add index\n\
-      if (val && store.indexes.indexOf(key) !== -1) {\n\
+      if (val && store.hasIndex(key)) {\n\
         store.setIndex(this, key, val);\n\
       }\n\
 \n\
@@ -5663,7 +5663,7 @@ function Schema(obj, opts) {\n\
   this.virtuals = {};\n\
   this.methods = {};\n\
   this.statics = {};\n\
-  this.options = opts || {store: true};\n\
+  this.options = opts || { store: true };\n\
 \n\
   if (this.options.store) {\n\
     this.store = new Store();\n\
@@ -6031,6 +6031,10 @@ Store.prototype.unsetIndex = function(index, key) {\n\
   delete this.caches[index][key];\n\
 };\n\
 \n\
+Store.prototype.hasIndex = function(key) {\n\
+  return this.indexes.indexOf(key) !== -1;\n\
+};\n\
+\n\
 /**\n\
  *  noop store used in place of a real store instance\n\
  *  to turn off storing option\n\
@@ -6043,7 +6047,8 @@ Store.noop = {\n\
   add: noop,\n\
   remove: noop,\n\
   setIndex: noop,\n\
-  unsetIndex: noop\n\
+  unsetIndex: noop,\n\
+  hasIndex: noop\n\
 };\n\
 \n\
 /*!\n\
