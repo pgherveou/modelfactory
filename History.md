@@ -1,4 +1,10 @@
 
+0.1.29 / 2014-03-05
+==================
+
+ * use Object.create(null) instead of {} to initialize schema properties
+ * hide private indexes from store
+
 0.1.28 / 2014-01-16
 ==================
 
