@@ -5657,12 +5657,12 @@ var Types = require('./schema/index'),\n\
  */\n\
 \n\
 function Schema(obj, opts) {\n\
-  if (!obj) obj = {};\n\
-  this.paths = {};\n\
-  this.tree = {};\n\
-  this.virtuals = {};\n\
-  this.methods = {};\n\
-  this.statics = {};\n\
+  if (!obj) obj = Object.create(null);\n\
+  this.paths = Object.create(null);\n\
+  this.tree = Object.create(null);\n\
+  this.virtuals = Object.create(null);\n\
+  this.methods = Object.create(null);\n\
+  this.statics = Object.create(null);\n\
   this.options = opts || { store: true };\n\
 \n\
   if (this.options.store) {\n\
