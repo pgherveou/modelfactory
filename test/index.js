@@ -144,7 +144,7 @@ UserSchema.virtual('name.full').set(function(v) {
   this.name.last = split.join(' ');
 });
 
-var User = model(UserSchema),
+var User = model('User', UserSchema),
     Project = model(ProjectSchema),
     user,
     emit;
@@ -177,6 +177,10 @@ describe('modelfactory specs', function() {
   it('should expose Schema and Error', function() {
     expect(modelfactory.Schema).to.be.ok;
     expect(modelfactory.Error).to.be.ok;
+  });
+
+  it('should get Schema by name', function() {
+    expect(modelfactory.model('User')).to.eq(User);
   });
 
   it('should have global plugins methods', function() {

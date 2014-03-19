@@ -5028,17 +5028,13 @@ modelfactory.Error = Errors;\n\
 compile = function compile(tree, proto, prefix) {\n\
   var keys = Object.keys(tree);\n\
   keys.forEach(function (key) {\n\
-    var limb = tree[key];\n\
+    var limb = tree[key],\n\
+        subprops = !(limb.constructor && limb.instance)\n\
+                && (!limb.type || limb.type.type)\n\
+                  ? limb\n\
+                  : null;\n\
 \n\
-    define(key,\n\
-           (('Object' === limb.constructor.name\n\
-               && Object.keys(limb).length)\n\
-               && (!limb.type || limb.type.type)\n\
-               ? limb\n\
-               : null),\n\
-           proto,\n\
-           prefix,\n\
-           keys);\n\
+    define(key, subprops, proto, prefix, keys);\n\
   });\n\
 };\n\
 \n\
@@ -5751,7 +5747,7 @@ Schema.prototype.path = function(path, obj) {\n\
   branch = this.tree;\n\
 \n\
   subpaths.forEach(function(sub, i) {\n\
-    if (!branch[sub]) branch[sub] = {};\n\
+    if (!branch[sub]) branch[sub] = Object.create(null);\n\
     if ('object' !== typeof branch[sub]) {\n\
       throw new Error(\n\
           'Cannot set nested path `' + path + '`.\\n\
