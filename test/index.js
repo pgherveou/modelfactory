@@ -341,6 +341,24 @@ describe('modelfactory specs', function() {
     expect(u.boo).to.eq(3);
   });
 
+  it ('should set nested property', function() {
+    var u;
+
+    u = new User();
+    u.set({ name: {first: 'PG', last: 'Herveou' } });
+    expect(u.name.first).to.eq('PG');
+    expect(u.name.last).to.eq('Herveou');
+
+    u = new User();
+    u.set('name.first', 'PG');
+    expect(u.name.first).to.eq('PG');
+
+    u = new User();
+    u.set({ 'name.first': 'PG', 'name.last': 'Herveou' });
+    expect(u.name.first).to.eq('PG');
+    expect(u.name.last).to.eq('Herveou');
+  });
+
   it('should equals other model', function() {
     var u = new User();
     expect(u.equals(u)).to.be.true;
