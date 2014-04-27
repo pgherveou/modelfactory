@@ -1,4 +1,5 @@
 components
+build
 .auth
 node_modules
 *.sublime-workspace
