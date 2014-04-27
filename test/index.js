@@ -5,6 +5,7 @@ var modelfactory = require(this.window ? 'modelfactory' : '..'),
     expect = chai.expect,
     model = modelfactory.model,
     Schema = modelfactory.Schema,
+    Mixed = Schema.Types.Mixed,
     ObjectId = Schema.Types.ObjectId;
 
 // global plugin
@@ -89,6 +90,9 @@ var UserSchema = new Schema({
       }
     ],
 
+    whatever: { type: Mixed },
+    whatevers: Array,
+
     name: {
       first: {
         type: String,
@@ -164,6 +168,8 @@ describe('modelfactory specs', function() {
         {name: 'project2', category: 'mobile'}
       ],
       keywords: ['foo', 'bar'],
+      whatever: { foo: { bar: 'bar' } },
+      whatevers: [{foo: 'foo'}, {bar: 'bar'}],
       tags: ['js'],
       date: new Date(),
       one: {two: {tree: true}}
@@ -267,6 +273,10 @@ describe('modelfactory specs', function() {
     expect(user.tags.slice()).to.deep.equal(['js']);
     expect(user.projects[0].name).to.eq('project1');
     expect(user.projects).to.have.length(2);
+  });
+
+  it ('should get a mixed property', function() {
+    expect(user.whatever).to.deep.equal({ foo: { bar: 'bar' } });
   });
 
   it('should have parent() and parentArray set properly', function() {

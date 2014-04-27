@@ -1,39 +1,19 @@
-
 /**
- * Require the given path.
+ * Require the module at `name`.
  *
- * @param {String} path
+ * @param {String} name
  * @return {Object} exports
  * @api public
  */
 
-function require(path, parent, orig) {
-  var resolved = require.resolve(path);
+function require(name) {
+  var module = require.modules[name];
+  if (!module) throw new Error('failed to require "' + name + '"');
 
-  // lookup failed
-  if (null == resolved) {
-    orig = orig || path;
-    parent = parent || 'root';
-    var err = new Error('Failed to require "' + orig + '" from "' + parent + '"');
-    err.path = orig;
-    err.parent = parent;
-    err.require = true;
-    throw err;
-  }
-
-  var module = require.modules[resolved];
-
-  // perform real require()
-  // by invoking the module's
-  // registered function
-  if (!module._resolving && !module.exports) {
-    var mod = {};
-    mod.exports = {};
-    mod.client = mod.component = true;
-    module._resolving = true;
-    module.call(this, mod.exports, require.relative(resolved), mod);
-    delete module._resolving;
-    module.exports = mod.exports;
+  if (!('exports' in module) && typeof module.definition === 'function') {
+    module.client = module.component = true;
+    module.definition.call(this, module.exports = {}, module);
+    delete module.definition;
   }
 
   return module.exports;
@@ -46,176 +26,34 @@ function require(path, parent, orig) {
 require.modules = {};
 
 /**
- * Registered aliases.
- */
-
-require.aliases = {};
-
-/**
- * Resolve `path`.
+ * Register module at `name` with callback `definition`.
  *
- * Lookup:
- *
- *   - PATH/index.js
- *   - PATH.js
- *   - PATH
- *
- * @param {String} path
- * @return {String} path or null
- * @api private
- */
-
-require.resolve = function(path) {
-  if (path.charAt(0) === '/') path = path.slice(1);
-
-  var paths = [
-    path,
-    path + '.js',
-    path + '.json',
-    path + '/index.js',
-    path + '/index.json'
-  ];
-
-  for (var i = 0; i < paths.length; i++) {
-    var path = paths[i];
-    if (require.modules.hasOwnProperty(path)) return path;
-    if (require.aliases.hasOwnProperty(path)) return require.aliases[path];
-  }
-};
-
-/**
- * Normalize `path` relative to the current path.
- *
- * @param {String} curr
- * @param {String} path
- * @return {String}
- * @api private
- */
-
-require.normalize = function(curr, path) {
-  var segs = [];
-
-  if ('.' != path.charAt(0)) return path;
-
-  curr = curr.split('/');
-  path = path.split('/');
-
-  for (var i = 0; i < path.length; ++i) {
-    if ('..' == path[i]) {
-      curr.pop();
-    } else if ('.' != path[i] && '' != path[i]) {
-      segs.push(path[i]);
-    }
-  }
-
-  return curr.concat(segs).join('/');
-};
-
-/**
- * Register module at `path` with callback `definition`.
- *
- * @param {String} path
+ * @param {String} name
  * @param {Function} definition
  * @api private
  */
 
-require.register = function(path, definition) {
-  require.modules[path] = definition;
+require.register = function (name, definition) {
+  require.modules[name] = {
+    definition: definition
+  };
 };
 
 /**
- * Alias a module definition.
+ * Define a module's exports immediately with `exports`.
  *
- * @param {String} from
- * @param {String} to
+ * @param {String} name
+ * @param {Generic} exports
  * @api private
  */
 
-require.alias = function(from, to) {
-  if (!require.modules.hasOwnProperty(from)) {
-    throw new Error('Failed to alias "' + from + '", it does not exist');
-  }
-  require.aliases[to] = from;
-};
-
-/**
- * Return a require function relative to the `parent` path.
- *
- * @param {String} parent
- * @return {Function}
- * @api private
- */
-
-require.relative = function(parent) {
-  var p = require.normalize(parent, '..');
-
-  /**
-   * lastIndexOf helper.
-   */
-
-  function lastIndexOf(arr, obj) {
-    var i = arr.length;
-    while (i--) {
-      if (arr[i] === obj) return i;
-    }
-    return -1;
-  }
-
-  /**
-   * The relative require() itself.
-   */
-
-  function localRequire(path) {
-    var resolved = localRequire.resolve(path);
-    return require(resolved, parent, path);
-  }
-
-  /**
-   * Resolve relative to the parent.
-   */
-
-  localRequire.resolve = function(path) {
-    var c = path.charAt(0);
-    if ('/' == c) return path.slice(1);
-    if ('.' == c) return require.normalize(p, path);
-
-    // resolve deps by returning
-    // the dep in the nearest "deps"
-    // directory
-    var segs = parent.split('/');
-    var i = lastIndexOf(segs, 'deps') + 1;
-    if (!i) i = 0;
-    path = segs.slice(0, i + 1).join('/') + '/deps/' + path;
-    return path;
+require.define = function (name, exports) {
+  require.modules[name] = {
+    exports: exports
   };
-
-  /**
-   * Check if module is defined at `path`.
-   */
-
-  localRequire.exists = function(path) {
-    return require.modules.hasOwnProperty(localRequire.resolve(path));
-  };
-
-  return localRequire;
 };
-require.register("component-indexof/index.js", Function("exports, require, module",
-"module.exports = function(arr, obj){\n\
-  if (arr.indexOf) return arr.indexOf(obj);\n\
-  for (var i = 0; i < arr.length; ++i) {\n\
-    if (arr[i] === obj) return i;\n\
-  }\n\
-  return -1;\n\
-};//@ sourceURL=component-indexof/index.js"
-));
-require.register("component-emitter/index.js", Function("exports, require, module",
+require.register("component~emitter@1.1.2", Function("exports, module",
 "\n\
-/**\n\
- * Module dependencies.\n\
- */\n\
-\n\
-var index = require('indexof');\n\
-\n\
 /**\n\
  * Expose `Emitter`.\n\
  */\n\
@@ -283,7 +121,7 @@ Emitter.prototype.once = function(event, fn){\n\
     fn.apply(this, arguments);\n\
   }\n\
 \n\
-  fn._off = on;\n\
+  on.fn = fn;\n\
   this.on(event, on);\n\
   return this;\n\
 };\n\
@@ -321,8 +159,14 @@ Emitter.prototype.removeEventListener = function(event, fn){\n\
   }\n\
 \n\
   // remove specific handler\n\
-  var i = index(callbacks, fn._off || fn);\n\
-  if (~i) callbacks.splice(i, 1);\n\
+  var cb;\n\
+  for (var i = 0; i < callbacks.length; i++) {\n\
+    cb = callbacks[i];\n\
+    if (cb === fn || cb.fn === fn) {\n\
+      callbacks.splice(i, 1);\n\
+      break;\n\
+    }\n\
+  }\n\
   return this;\n\
 };\n\
 \n\
@@ -373,14 +217,21 @@ Emitter.prototype.listeners = function(event){\n\
 Emitter.prototype.hasListeners = function(event){\n\
   return !! this.listeners(event).length;\n\
 };\n\
-//@ sourceURL=component-emitter/index.js"
+\n\
+//# sourceURL=components/component/emitter/1.1.2/index.js"
 ));
-require.register("pgherveou-modelarray/index.js", Function("exports, require, module",
+
+require.modules["component-emitter"] = require.modules["component~emitter@1.1.2"];
+require.modules["component~emitter"] = require.modules["component~emitter@1.1.2"];
+require.modules["emitter"] = require.modules["component~emitter@1.1.2"];
+
+
+require.register("pgherveou~modelarray@0.0.8", Function("exports, module",
 "/*!\n\
  * dependencies\n\
  */\n\
 \n\
-var emitter = require('emitter');\n\
+var emitter = require(\"component~emitter@1.1.2\");\n\
 \n\
 /**\n\
  * ModelArray Constructor\n\
@@ -417,10 +268,26 @@ var emitter = require('emitter');\n\
 function ModelArray (values, model) {\n\
   var arr = [];\n\
   arr.__proto__ = this;\n\
-  Object.defineProperty(this, '_silent', {});\n\
-  Object.defineProperty(this, '_callbacks', {value: Object.create(null)});\n\
-  Object.defineProperty(this, '_byId', {value: Object.create(null)});\n\
-  Object.defineProperty(this, 'model', {value: model});\n\
+\n\
+  Object.defineProperty(this, '_silent', {\n\
+    value: false,\n\
+    writable: true\n\
+  });\n\
+\n\
+  Object.defineProperty(this, '_callbacks', {\n\
+    value: Object.create(null),\n\
+    writable: true\n\
+  });\n\
+\n\
+  Object.defineProperty(this, 'model', {\n\
+    value: model\n\
+  });\n\
+\n\
+  Object.defineProperty(this, '_byId', {\n\
+    value: Object.create(null),\n\
+    writable: true\n\
+  });\n\
+\n\
   if (values && Array.isArray(values)) {\n\
     arr.silent().push.apply(arr, values);\n\
   } else if (values) {\n\
@@ -452,6 +319,20 @@ module.exports = ModelArray;\n\
 \n\
 ModelArray.prototype.model;\n\
 \n\
+// default id attributes\n\
+ModelArray.idAttributes = ['id', '_id', 'cid'];\n\
+\n\
+function getId(obj) {\n\
+  if (!obj) return;\n\
+\n\
+  var arr = ModelArray.idAttributes,\n\
+      len = arr.length;\n\
+\n\
+  for (var i = 0; i < len; i++) {\n\
+    if (obj[arr[i]]) return obj[arr[i]];\n\
+  }\n\
+}\n\
+\n\
 /**\n\
  * cast arguments and create a unique list of values\n\
  * that are not already in this array\n\
@@ -460,21 +341,15 @@ ModelArray.prototype.model;\n\
  */\n\
 \n\
 function _uniq() {\n\
-  var list = [], ids = Object.create(null);\n\
-\n\
+  var list = [];\n\
   [].forEach.call(arguments, function (obj) {\n\
+    if (!obj) return;\n\
+    var model = this._cast(obj);\n\
+\n\
     // ignore item already in array\n\
-    if (this.get(obj)) return;\n\
+    if (this.get(model)) return;\n\
 \n\
-    // cast object\n\
-    var model = this._cast(obj),\n\
-        id = model.id || model.cid || model;\n\
-\n\
-    // make sure we don't add it twice\n\
-    if (ids[id]) return;\n\
-\n\
-    list.push(model);\n\
-    if ('object' !== typeof id) ids[id] = true;\n\
+    if (list.indexOf(model) === -1) list.push(model);\n\
   }, this);\n\
 \n\
   return list;\n\
@@ -530,11 +405,19 @@ ModelArray.prototype.emit = function () {\n\
  */\n\
 \n\
 ModelArray.prototype.index = function () {\n\
-  var value;\n\
+\n\
   [].forEach.call(arguments, function (m) {\n\
-    if (m.id) this._byId[m.id] = m;\n\
-    if (m.cid) this._byId[m.cid] = m;\n\
-    if (!m.id && !m.cid && ('object' !== typeof (value = m.valueOf()))) {\n\
+    var index = false,\n\
+        value;\n\
+\n\
+    ModelArray.idAttributes.forEach(function (idAttribute) {\n\
+      if (m[idAttribute]) {\n\
+        this._byId[m[idAttribute]] = m;\n\
+        index = true;\n\
+      }\n\
+    }, this);\n\
+\n\
+    if (!index && ('object' !== typeof (value = m.valueOf()))) {\n\
       this._byId[value] = m;\n\
     }\n\
   }, this);\n\
@@ -549,9 +432,20 @@ ModelArray.prototype.index = function () {\n\
 \n\
 ModelArray.prototype.unindex = function () {\n\
   [].forEach.call(arguments, function (m) {\n\
-    if (m.id) delete this._byId[m.id];\n\
-    if (m.cid) delete this._byId[m.cid];\n\
-    if (!m.id && !m.cid) delete this._byId[m.valueOf()];\n\
+    var index = false,\n\
+        value;\n\
+\n\
+    ModelArray.idAttributes.forEach(function (idAttribute) {\n\
+      if (m[idAttribute]) {\n\
+        delete this._byId[m[idAttribute]];\n\
+        index = true;\n\
+      }\n\
+    }, this);\n\
+\n\
+    if (!index && ('object' !== typeof (value = m.valueOf()))) {\n\
+      delete this._byId[value];\n\
+    }\n\
+\n\
   }, this);\n\
 };\n\
 \n\
@@ -565,9 +459,18 @@ ModelArray.prototype.unindex = function () {\n\
 \n\
 ModelArray.prototype.get = function (obj) {\n\
   if (!obj) return;\n\
-  var id = obj.id || obj.cid || obj.valueOf();\n\
-  if (id && 'object' !== typeof(id)) return this._byId[id];\n\
-  return this[this.indexOf(id)];\n\
+  var ids = ModelArray.idAttributes,\n\
+      len = ids.length,\n\
+      id;\n\
+\n\
+  for (var i = 0; i < len; i++) {\n\
+    id = obj[ids[i]];\n\
+    if (id && this._byId[id]) return this._byId[id];\n\
+  }\n\
+\n\
+  id = obj.valueOf();\n\
+  if (this._byId[id]) return this._byId[id];\n\
+  return this[this.indexOf(obj)];\n\
 };\n\
 \n\
 /**\n\
@@ -630,7 +533,7 @@ ModelArray.prototype.set = function (models) {\n\
     .forEach(function (model) {\n\
       var existing = this.get(model);\n\
       if (existing) {\n\
-        ids.push(existing.id || existing.cid || existing.valueOf());\n\
+        ids.push(getId(existing) || existing.valueOf());\n\
         if (existing.set) {\n\
           existing.set(model);\n\
         } else {\n\
@@ -666,14 +569,14 @@ ModelArray.prototype.set = function (models) {\n\
 ModelArray.prototype.reset = function (models) {\n\
   [].splice.call(this, 0, this.length);\n\
   this._byId = Object.create(null);\n\
-  this.silent().push(models);\n\
+  if (models) this.silent().push.apply(this, models);\n\
   this.emit('reset', models, this);\n\
 };\n\
 \n\
 /**\n\
  * Wraps [`Array#push`](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/push)\n\
  *\n\
- * @event remove\n\
+ * @event add\n\
  * @api public\n\
  */\n\
 \n\
@@ -693,6 +596,21 @@ ModelArray.prototype.push = function () {\n\
   }\n\
 \n\
   return ret;\n\
+};\n\
+\n\
+/**\n\
+ * add an array of item at the end of the array\n\
+ *\n\
+ * @event add\n\
+ * @api public\n\
+ */\n\
+\n\
+ModelArray.prototype.add = function (items) {\n\
+  if (Array.isArray(items)) {\n\
+    this.push.apply(this, items);\n\
+  } else {\n\
+    this.push(items);\n\
+  }\n\
 };\n\
 \n\
 /**\n\
@@ -816,9 +734,16 @@ ModelArray.prototype.toJSON = function () {\n\
     return model.toJSON ? model.toJSON() : model;\n\
   });\n\
 };\n\
-//@ sourceURL=pgherveou-modelarray/index.js"
+\n\
+//# sourceURL=components/pgherveou/modelarray/0.0.8/index.js"
 ));
-require.register("chaijs-assertion-error/index.js", Function("exports, require, module",
+
+require.modules["pgherveou-modelarray"] = require.modules["pgherveou~modelarray@0.0.8"];
+require.modules["pgherveou~modelarray"] = require.modules["pgherveou~modelarray@0.0.8"];
+require.modules["modelarray"] = require.modules["pgherveou~modelarray@0.0.8"];
+
+
+require.register("chaijs~assertion-error@1.0.0", Function("exports, module",
 "/*!\n\
  * assertion-error\n\
  * Copyright(c) 2013 Jake Luer <jake@qualiancy.com>\n\
@@ -929,16 +854,444 @@ AssertionError.prototype.toJSON = function (stack) {\n\
 \n\
   return props;\n\
 };\n\
-//@ sourceURL=chaijs-assertion-error/index.js"
+\n\
+//# sourceURL=components/chaijs/assertion-error/1.0.0/index.js"
 ));
-require.register("chaijs-chai/index.js", Function("exports, require, module",
-"module.exports = require('./lib/chai');\n\
-//@ sourceURL=chaijs-chai/index.js"
+
+require.modules["chaijs-assertion-error"] = require.modules["chaijs~assertion-error@1.0.0"];
+require.modules["chaijs~assertion-error"] = require.modules["chaijs~assertion-error@1.0.0"];
+require.modules["assertion-error"] = require.modules["chaijs~assertion-error@1.0.0"];
+
+
+require.register("chaijs~type-detect@0.1.1", Function("exports, module",
+"/*!\n\
+ * type-detect\n\
+ * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>\n\
+ * MIT Licensed\n\
+ */\n\
+\n\
+/*!\n\
+ * Primary Exports\n\
+ */\n\
+\n\
+var exports = module.exports = getType;\n\
+\n\
+/*!\n\
+ * Detectable javascript natives\n\
+ */\n\
+\n\
+var natives = {\n\
+    '[object Array]': 'array'\n\
+  , '[object RegExp]': 'regexp'\n\
+  , '[object Function]': 'function'\n\
+  , '[object Arguments]': 'arguments'\n\
+  , '[object Date]': 'date'\n\
+};\n\
+\n\
+/**\n\
+ * ### typeOf (obj)\n\
+ *\n\
+ * Use several different techniques to determine\n\
+ * the type of object being tested.\n\
+ *\n\
+ *\n\
+ * @param {Mixed} object\n\
+ * @return {String} object type\n\
+ * @api public\n\
+ */\n\
+\n\
+function getType (obj) {\n\
+  var str = Object.prototype.toString.call(obj);\n\
+  if (natives[str]) return natives[str];\n\
+  if (obj === null) return 'null';\n\
+  if (obj === undefined) return 'undefined';\n\
+  if (obj === Object(obj)) return 'object';\n\
+  return typeof obj;\n\
+}\n\
+\n\
+exports.Library = Library;\n\
+\n\
+/**\n\
+ * ### Library\n\
+ *\n\
+ * Create a repository for custom type detection.\n\
+ *\n\
+ * ```js\n\
+ * var lib = new type.Library;\n\
+ * ```\n\
+ *\n\
+ */\n\
+\n\
+function Library () {\n\
+  this.tests = {};\n\
+}\n\
+\n\
+/**\n\
+ * #### .of (obj)\n\
+ *\n\
+ * Expose replacement `typeof` detection to the library.\n\
+ *\n\
+ * ```js\n\
+ * if ('string' === lib.of('hello world')) {\n\
+ *   // ...\n\
+ * }\n\
+ * ```\n\
+ *\n\
+ * @param {Mixed} object to test\n\
+ * @return {String} type\n\
+ */\n\
+\n\
+Library.prototype.of = getType;\n\
+\n\
+/**\n\
+ * #### .define (type, test)\n\
+ *\n\
+ * Add a test to for the `.test()` assertion.\n\
+ *\n\
+ * Can be defined as a regular expression:\n\
+ *\n\
+ * ```js\n\
+ * lib.define('int', /^[0-9]+$/);\n\
+ * ```\n\
+ *\n\
+ * ... or as a function:\n\
+ *\n\
+ * ```js\n\
+ * lib.define('bln', function (obj) {\n\
+ *   if ('boolean' === lib.of(obj)) return true;\n\
+ *   var blns = [ 'yes', 'no', 'true', 'false', 1, 0 ];\n\
+ *   if ('string' === lib.of(obj)) obj = obj.toLowerCase();\n\
+ *   return !! ~blns.indexOf(obj);\n\
+ * });\n\
+ * ```\n\
+ *\n\
+ * @param {String} type\n\
+ * @param {RegExp|Function} test\n\
+ * @api public\n\
+ */\n\
+\n\
+Library.prototype.define = function (type, test) {\n\
+  if (arguments.length === 1) return this.tests[type];\n\
+  this.tests[type] = test;\n\
+  return this;\n\
+};\n\
+\n\
+/**\n\
+ * #### .test (obj, test)\n\
+ *\n\
+ * Assert that an object is of type. Will first\n\
+ * check natives, and if that does not pass it will\n\
+ * use the user defined custom tests.\n\
+ *\n\
+ * ```js\n\
+ * assert(lib.test('1', 'int'));\n\
+ * assert(lib.test('yes', 'bln'));\n\
+ * ```\n\
+ *\n\
+ * @param {Mixed} object\n\
+ * @param {String} type\n\
+ * @return {Boolean} result\n\
+ * @api public\n\
+ */\n\
+\n\
+Library.prototype.test = function (obj, type) {\n\
+  if (type === getType(obj)) return true;\n\
+  var test = this.tests[type];\n\
+\n\
+  if (test && 'regexp' === getType(test)) {\n\
+    return test.test(obj);\n\
+  } else if (test && 'function' === getType(test)) {\n\
+    return test(obj);\n\
+  } else {\n\
+    throw new ReferenceError('Type test \"' + type + '\" not defined or invalid.');\n\
+  }\n\
+};\n\
+\n\
+//# sourceURL=components/chaijs/type-detect/0.1.1/lib/type.js"
 ));
-require.register("chaijs-chai/lib/chai.js", Function("exports, require, module",
+
+require.modules["chaijs-type-detect"] = require.modules["chaijs~type-detect@0.1.1"];
+require.modules["chaijs~type-detect"] = require.modules["chaijs~type-detect@0.1.1"];
+require.modules["type-detect"] = require.modules["chaijs~type-detect@0.1.1"];
+
+
+require.register("chaijs~deep-eql@0.1.3", Function("exports, module",
+"/*!\n\
+ * deep-eql\n\
+ * Copyright(c) 2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * MIT Licensed\n\
+ */\n\
+\n\
+/*!\n\
+ * Module dependencies\n\
+ */\n\
+\n\
+var type = require(\"chaijs~type-detect@0.1.1\");\n\
+\n\
+/*!\n\
+ * Buffer.isBuffer browser shim\n\
+ */\n\
+\n\
+var Buffer;\n\
+try { Buffer = require(\"buffer\").Buffer; }\n\
+catch(ex) {\n\
+  Buffer = {};\n\
+  Buffer.isBuffer = function() { return false; }\n\
+}\n\
+\n\
+/*!\n\
+ * Primary Export\n\
+ */\n\
+\n\
+module.exports = deepEqual;\n\
+\n\
+/**\n\
+ * Assert super-strict (egal) equality between\n\
+ * two objects of any type.\n\
+ *\n\
+ * @param {Mixed} a\n\
+ * @param {Mixed} b\n\
+ * @param {Array} memoised (optional)\n\
+ * @return {Boolean} equal match\n\
+ */\n\
+\n\
+function deepEqual(a, b, m) {\n\
+  if (sameValue(a, b)) {\n\
+    return true;\n\
+  } else if ('date' === type(a)) {\n\
+    return dateEqual(a, b);\n\
+  } else if ('regexp' === type(a)) {\n\
+    return regexpEqual(a, b);\n\
+  } else if (Buffer.isBuffer(a)) {\n\
+    return bufferEqual(a, b);\n\
+  } else if ('arguments' === type(a)) {\n\
+    return argumentsEqual(a, b, m);\n\
+  } else if (!typeEqual(a, b)) {\n\
+    return false;\n\
+  } else if (('object' !== type(a) && 'object' !== type(b))\n\
+  && ('array' !== type(a) && 'array' !== type(b))) {\n\
+    return sameValue(a, b);\n\
+  } else {\n\
+    return objectEqual(a, b, m);\n\
+  }\n\
+}\n\
+\n\
+/*!\n\
+ * Strict (egal) equality test. Ensures that NaN always\n\
+ * equals NaN and `-0` does not equal `+0`.\n\
+ *\n\
+ * @param {Mixed} a\n\
+ * @param {Mixed} b\n\
+ * @return {Boolean} equal match\n\
+ */\n\
+\n\
+function sameValue(a, b) {\n\
+  if (a === b) return a !== 0 || 1 / a === 1 / b;\n\
+  return a !== a && b !== b;\n\
+}\n\
+\n\
+/*!\n\
+ * Compare the types of two given objects and\n\
+ * return if they are equal. Note that an Array\n\
+ * has a type of `array` (not `object`) and arguments\n\
+ * have a type of `arguments` (not `array`/`object`).\n\
+ *\n\
+ * @param {Mixed} a\n\
+ * @param {Mixed} b\n\
+ * @return {Boolean} result\n\
+ */\n\
+\n\
+function typeEqual(a, b) {\n\
+  return type(a) === type(b);\n\
+}\n\
+\n\
+/*!\n\
+ * Compare two Date objects by asserting that\n\
+ * the time values are equal using `saveValue`.\n\
+ *\n\
+ * @param {Date} a\n\
+ * @param {Date} b\n\
+ * @return {Boolean} result\n\
+ */\n\
+\n\
+function dateEqual(a, b) {\n\
+  if ('date' !== type(b)) return false;\n\
+  return sameValue(a.getTime(), b.getTime());\n\
+}\n\
+\n\
+/*!\n\
+ * Compare two regular expressions by converting them\n\
+ * to string and checking for `sameValue`.\n\
+ *\n\
+ * @param {RegExp} a\n\
+ * @param {RegExp} b\n\
+ * @return {Boolean} result\n\
+ */\n\
+\n\
+function regexpEqual(a, b) {\n\
+  if ('regexp' !== type(b)) return false;\n\
+  return sameValue(a.toString(), b.toString());\n\
+}\n\
+\n\
+/*!\n\
+ * Assert deep equality of two `arguments` objects.\n\
+ * Unfortunately, these must be sliced to arrays\n\
+ * prior to test to ensure no bad behavior.\n\
+ *\n\
+ * @param {Arguments} a\n\
+ * @param {Arguments} b\n\
+ * @param {Array} memoize (optional)\n\
+ * @return {Boolean} result\n\
+ */\n\
+\n\
+function argumentsEqual(a, b, m) {\n\
+  if ('arguments' !== type(b)) return false;\n\
+  a = [].slice.call(a);\n\
+  b = [].slice.call(b);\n\
+  return deepEqual(a, b, m);\n\
+}\n\
+\n\
+/*!\n\
+ * Get enumerable properties of a given object.\n\
+ *\n\
+ * @param {Object} a\n\
+ * @return {Array} property names\n\
+ */\n\
+\n\
+function enumerable(a) {\n\
+  var res = [];\n\
+  for (var key in a) res.push(key);\n\
+  return res;\n\
+}\n\
+\n\
+/*!\n\
+ * Simple equality for flat iterable objects\n\
+ * such as Arrays or Node.js buffers.\n\
+ *\n\
+ * @param {Iterable} a\n\
+ * @param {Iterable} b\n\
+ * @return {Boolean} result\n\
+ */\n\
+\n\
+function iterableEqual(a, b) {\n\
+  if (a.length !==  b.length) return false;\n\
+\n\
+  var i = 0;\n\
+  var match = true;\n\
+\n\
+  for (; i < a.length; i++) {\n\
+    if (a[i] !== b[i]) {\n\
+      match = false;\n\
+      break;\n\
+    }\n\
+  }\n\
+\n\
+  return match;\n\
+}\n\
+\n\
+/*!\n\
+ * Extension to `iterableEqual` specifically\n\
+ * for Node.js Buffers.\n\
+ *\n\
+ * @param {Buffer} a\n\
+ * @param {Mixed} b\n\
+ * @return {Boolean} result\n\
+ */\n\
+\n\
+function bufferEqual(a, b) {\n\
+  if (!Buffer.isBuffer(b)) return false;\n\
+  return iterableEqual(a, b);\n\
+}\n\
+\n\
+/*!\n\
+ * Block for `objectEqual` ensuring non-existing\n\
+ * values don't get in.\n\
+ *\n\
+ * @param {Mixed} object\n\
+ * @return {Boolean} result\n\
+ */\n\
+\n\
+function isValue(a) {\n\
+  return a !== null && a !== undefined;\n\
+}\n\
+\n\
+/*!\n\
+ * Recursively check the equality of two objects.\n\
+ * Once basic sameness has been established it will\n\
+ * defer to `deepEqual` for each enumerable key\n\
+ * in the object.\n\
+ *\n\
+ * @param {Mixed} a\n\
+ * @param {Mixed} b\n\
+ * @return {Boolean} result\n\
+ */\n\
+\n\
+function objectEqual(a, b, m) {\n\
+  if (!isValue(a) || !isValue(b)) {\n\
+    return false;\n\
+  }\n\
+\n\
+  if (a.prototype !== b.prototype) {\n\
+    return false;\n\
+  }\n\
+\n\
+  var i;\n\
+  if (m) {\n\
+    for (i = 0; i < m.length; i++) {\n\
+      if ((m[i][0] === a && m[i][1] === b)\n\
+      ||  (m[i][0] === b && m[i][1] === a)) {\n\
+        return true;\n\
+      }\n\
+    }\n\
+  } else {\n\
+    m = [];\n\
+  }\n\
+\n\
+  try {\n\
+    var ka = enumerable(a);\n\
+    var kb = enumerable(b);\n\
+  } catch (ex) {\n\
+    return false;\n\
+  }\n\
+\n\
+  ka.sort();\n\
+  kb.sort();\n\
+\n\
+  if (!iterableEqual(ka, kb)) {\n\
+    return false;\n\
+  }\n\
+\n\
+  m.push([ a, b ]);\n\
+\n\
+  var key;\n\
+  for (i = ka.length - 1; i >= 0; i--) {\n\
+    key = ka[i];\n\
+    if (!deepEqual(a[key], b[key], m)) {\n\
+      return false;\n\
+    }\n\
+  }\n\
+\n\
+  return true;\n\
+}\n\
+\n\
+//# sourceURL=components/chaijs/deep-eql/0.1.3/lib/eql.js"
+));
+
+require.modules["chaijs-deep-eql"] = require.modules["chaijs~deep-eql@0.1.3"];
+require.modules["chaijs~deep-eql"] = require.modules["chaijs~deep-eql@0.1.3"];
+require.modules["deep-eql"] = require.modules["chaijs~deep-eql@0.1.3"];
+
+
+require.register("chaijs~chai@master", Function("exports, module",
+"module.exports = require(\"chaijs~chai@master/lib/chai.js\");\n\
+\n\
+//# sourceURL=components/chaijs/chai/master/index.js"
+));
+
+require.register("chaijs~chai@master/lib/chai.js", Function("exports, module",
 "/*!\n\
  * chai\n\
- * Copyright(c) 2011-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -949,19 +1302,19 @@ var used = []\n\
  * Chai version\n\
  */\n\
 \n\
-exports.version = '1.7.2';\n\
+exports.version = '1.9.1';\n\
 \n\
 /*!\n\
  * Assertion Error\n\
  */\n\
 \n\
-exports.AssertionError = require('assertion-error');\n\
+exports.AssertionError = require(\"chaijs~assertion-error@1.0.0\");\n\
 \n\
 /*!\n\
  * Utils for plugins (not exported)\n\
  */\n\
 \n\
-var util = require('./chai/utils');\n\
+var util = require(\"chaijs~chai@master/lib/chai/utils/index.js\");\n\
 \n\
 /**\n\
  * # .use(function)\n\
@@ -983,48 +1336,59 @@ exports.use = function (fn) {\n\
 };\n\
 \n\
 /*!\n\
+ * Configuration\n\
+ */\n\
+\n\
+var config = require(\"chaijs~chai@master/lib/chai/config.js\");\n\
+exports.config = config;\n\
+\n\
+/*!\n\
  * Primary `Assertion` prototype\n\
  */\n\
 \n\
-var assertion = require('./chai/assertion');\n\
+var assertion = require(\"chaijs~chai@master/lib/chai/assertion.js\");\n\
 exports.use(assertion);\n\
 \n\
 /*!\n\
  * Core Assertions\n\
  */\n\
 \n\
-var core = require('./chai/core/assertions');\n\
+var core = require(\"chaijs~chai@master/lib/chai/core/assertions.js\");\n\
 exports.use(core);\n\
 \n\
 /*!\n\
  * Expect interface\n\
  */\n\
 \n\
-var expect = require('./chai/interface/expect');\n\
+var expect = require(\"chaijs~chai@master/lib/chai/interface/expect.js\");\n\
 exports.use(expect);\n\
 \n\
 /*!\n\
  * Should interface\n\
  */\n\
 \n\
-var should = require('./chai/interface/should');\n\
+var should = require(\"chaijs~chai@master/lib/chai/interface/should.js\");\n\
 exports.use(should);\n\
 \n\
 /*!\n\
  * Assert interface\n\
  */\n\
 \n\
-var assert = require('./chai/interface/assert');\n\
+var assert = require(\"chaijs~chai@master/lib/chai/interface/assert.js\");\n\
 exports.use(assert);\n\
-//@ sourceURL=chaijs-chai/lib/chai.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai.js"
 ));
-require.register("chaijs-chai/lib/chai/assertion.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/assertion.js", Function("exports, module",
 "/*!\n\
  * chai\n\
  * http://chaijs.com\n\
- * Copyright(c) 2011-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
+\n\
+var config = require(\"chaijs~chai@master/lib/chai/config.js\");\n\
 \n\
 module.exports = function (_chai, util) {\n\
   /*!\n\
@@ -1054,33 +1418,27 @@ module.exports = function (_chai, util) {\n\
     flag(this, 'message', msg);\n\
   }\n\
 \n\
-  /*!\n\
-    * ### Assertion.includeStack\n\
-    *\n\
-    * User configurable property, influences whether stack trace\n\
-    * is included in Assertion error message. Default of false\n\
-    * suppresses stack trace in the error message\n\
-    *\n\
-    *     Assertion.includeStack = true;  // enable stack on error\n\
-    *\n\
-    * @api public\n\
-    */\n\
+  Object.defineProperty(Assertion, 'includeStack', {\n\
+    get: function() {\n\
+      console.warn('Assertion.includeStack is deprecated, use chai.config.includeStack instead.');\n\
+      return config.includeStack;\n\
+    },\n\
+    set: function(value) {\n\
+      console.warn('Assertion.includeStack is deprecated, use chai.config.includeStack instead.');\n\
+      config.includeStack = value;\n\
+    }\n\
+  });\n\
 \n\
-  Assertion.includeStack = false;\n\
-\n\
-  /*!\n\
-   * ### Assertion.showDiff\n\
-   *\n\
-   * User configurable property, influences whether or not\n\
-   * the `showDiff` flag should be included in the thrown\n\
-   * AssertionErrors. `false` will always be `false`; `true`\n\
-   * will be true when the assertion has requested a diff\n\
-   * be shown.\n\
-   *\n\
-   * @api public\n\
-   */\n\
-\n\
-  Assertion.showDiff = true;\n\
+  Object.defineProperty(Assertion, 'showDiff', {\n\
+    get: function() {\n\
+      console.warn('Assertion.showDiff is deprecated, use chai.config.showDiff instead.');\n\
+      return config.showDiff;\n\
+    },\n\
+    set: function(value) {\n\
+      console.warn('Assertion.showDiff is deprecated, use chai.config.showDiff instead.');\n\
+      config.showDiff = value;\n\
+    }\n\
+  });\n\
 \n\
   Assertion.addProperty = function (name, fn) {\n\
     util.addProperty(this.prototype, name, fn);\n\
@@ -1102,6 +1460,10 @@ module.exports = function (_chai, util) {\n\
     util.overwriteMethod(this.prototype, name, fn);\n\
   };\n\
 \n\
+  Assertion.overwriteChainableMethod = function (name, fn, chainingBehavior) {\n\
+    util.overwriteChainableMethod(this.prototype, name, fn, chainingBehavior);\n\
+  };\n\
+\n\
   /*!\n\
    * ### .assert(expression, message, negateMessage, expected, actual)\n\
    *\n\
@@ -1119,7 +1481,7 @@ module.exports = function (_chai, util) {\n\
   Assertion.prototype.assert = function (expr, msg, negateMsg, expected, _actual, showDiff) {\n\
     var ok = util.test(this, arguments);\n\
     if (true !== showDiff) showDiff = false;\n\
-    if (true !== Assertion.showDiff) showDiff = false;\n\
+    if (true !== config.showDiff) showDiff = false;\n\
 \n\
     if (!ok) {\n\
       var msg = util.getMessage(this, arguments)\n\
@@ -1128,7 +1490,7 @@ module.exports = function (_chai, util) {\n\
           actual: actual\n\
         , expected: expected\n\
         , showDiff: showDiff\n\
-      }, (Assertion.includeStack) ? this.assert : flag(this, 'ssfi'));\n\
+      }, (config.includeStack) ? this.assert : flag(this, 'ssfi'));\n\
     }\n\
   };\n\
 \n\
@@ -1149,13 +1511,70 @@ module.exports = function (_chai, util) {\n\
       }\n\
   });\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/assertion.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/assertion.js"
 ));
-require.register("chaijs-chai/lib/chai/core/assertions.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/config.js", Function("exports, module",
+"module.exports = {\n\
+\n\
+  /**\n\
+   * ### config.includeStack\n\
+   *\n\
+   * User configurable property, influences whether stack trace\n\
+   * is included in Assertion error message. Default of false\n\
+   * suppresses stack trace in the error message.\n\
+   *\n\
+   *     chai.config.includeStack = true;  // enable stack on error\n\
+   *\n\
+   * @param {Boolean}\n\
+   * @api public\n\
+   */\n\
+\n\
+   includeStack: false,\n\
+\n\
+  /**\n\
+   * ### config.showDiff\n\
+   *\n\
+   * User configurable property, influences whether or not\n\
+   * the `showDiff` flag should be included in the thrown\n\
+   * AssertionErrors. `false` will always be `false`; `true`\n\
+   * will be true when the assertion has requested a diff\n\
+   * be shown.\n\
+   *\n\
+   * @param {Boolean}\n\
+   * @api public\n\
+   */\n\
+\n\
+  showDiff: true,\n\
+\n\
+  /**\n\
+   * ### config.truncateThreshold\n\
+   *\n\
+   * User configurable property, sets length threshold for actual and\n\
+   * expected values in assertion errors. If this threshold is exceeded,\n\
+   * the value is truncated.\n\
+   *\n\
+   * Set it to zero if you want to disable truncating altogether.\n\
+   *\n\
+   *     chai.config.truncateThreshold = 0;  // disable truncating\n\
+   *\n\
+   * @param {Number}\n\
+   * @api public\n\
+   */\n\
+\n\
+  truncateThreshold: 40\n\
+\n\
+};\n\
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/config.js"
+));
+
+require.register("chaijs~chai@master/lib/chai/core/assertions.js", Function("exports, module",
 "/*!\n\
  * chai\n\
  * http://chaijs.com\n\
- * Copyright(c) 2011-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -1167,9 +1586,9 @@ module.exports = function (chai, _) {\n\
   /**\n\
    * ### Language Chains\n\
    *\n\
-   * The following are provide as chainable getters to\n\
+   * The following are provided as chainable getters to\n\
    * improve the readability of your assertions. They\n\
-   * do not provide an testing capability unless they\n\
+   * do not provide testing capabilities unless they\n\
    * have been overwritten by a plugin.\n\
    *\n\
    * **Chains**\n\
@@ -1180,6 +1599,7 @@ module.exports = function (chai, _) {\n\
    * - is\n\
    * - that\n\
    * - and\n\
+   * - has\n\
    * - have\n\
    * - with\n\
    * - at\n\
@@ -1191,7 +1611,7 @@ module.exports = function (chai, _) {\n\
    */\n\
 \n\
   [ 'to', 'be', 'been'\n\
-  , 'is', 'and', 'have'\n\
+  , 'is', 'and', 'has', 'have'\n\
   , 'with', 'that', 'at'\n\
   , 'of', 'same' ].forEach(function (chain) {\n\
     Assertion.addProperty(chain, function () {\n\
@@ -1299,9 +1719,28 @@ module.exports = function (chai, _) {\n\
 \n\
   function include (val, msg) {\n\
     if (msg) flag(this, 'message', msg);\n\
-    var obj = flag(this, 'object')\n\
+    var obj = flag(this, 'object');\n\
+    var expected = false;\n\
+    if (_.type(obj) === 'array' && _.type(val) === 'object') {\n\
+      for (var i in obj) {\n\
+        if (_.eql(obj[i], val)) {\n\
+          expected = true;\n\
+          break;\n\
+        }\n\
+      }\n\
+    } else if (_.type(val) === 'object') {\n\
+      if (!flag(this, 'negate')) {\n\
+        for (var k in val) new Assertion(obj).property(k, val[k]);\n\
+        return;\n\
+      }\n\
+      var subset = {}\n\
+      for (var k in val) subset[k] = obj[k]\n\
+      expected = _.eql(subset, val);\n\
+    } else {\n\
+      expected = obj && ~obj.indexOf(val)\n\
+    }\n\
     this.assert(\n\
-        ~obj.indexOf(val)\n\
+        expected\n\
       , 'expected #{this} to include ' + _.inspect(val)\n\
       , 'expected #{this} to not include ' + _.inspect(val));\n\
   }\n\
@@ -2156,6 +2595,7 @@ module.exports = function (chai, _) {\n\
    * @param {String|RegExp} expected error message\n\
    * @param {String} message _optional_\n\
    * @see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error#Error_types\n\
+   * @returns error for chaining (null if no error)\n\
    * @api public\n\
    */\n\
 \n\
@@ -2180,7 +2620,10 @@ module.exports = function (chai, _) {\n\
       constructor = null;\n\
       errMsg = null;\n\
     } else if (typeof constructor === 'function') {\n\
-      name = (new constructor()).name;\n\
+      name = constructor.prototype.name || constructor.name;\n\
+      if (name === 'Error' && constructor !== Error) {\n\
+        name = (new constructor()).name;\n\
+      }\n\
     } else {\n\
       constructor = null;\n\
     }\n\
@@ -2194,12 +2637,14 @@ module.exports = function (chai, _) {\n\
             err === desiredError\n\
           , 'expected #{this} to throw #{exp} but #{act} was thrown'\n\
           , 'expected #{this} to not throw #{exp}'\n\
-          , desiredError\n\
-          , err\n\
+          , (desiredError instanceof Error ? desiredError.toString() : desiredError)\n\
+          , (err instanceof Error ? err.toString() : err)\n\
         );\n\
 \n\
+        flag(this, 'object', err);\n\
         return this;\n\
       }\n\
+\n\
       // next, check constructor\n\
       if (constructor) {\n\
         this.assert(\n\
@@ -2207,11 +2652,15 @@ module.exports = function (chai, _) {\n\
           , 'expected #{this} to throw #{exp} but #{act} was thrown'\n\
           , 'expected #{this} to not throw #{exp} but #{act} was thrown'\n\
           , name\n\
-          , err\n\
+          , (err instanceof Error ? err.toString() : err)\n\
         );\n\
 \n\
-        if (!errMsg) return this;\n\
+        if (!errMsg) {\n\
+          flag(this, 'object', err);\n\
+          return this;\n\
+        }\n\
       }\n\
+\n\
       // next, check message\n\
       var message = 'object' === _.type(err) && \"message\" in err\n\
         ? err.message\n\
@@ -2226,6 +2675,7 @@ module.exports = function (chai, _) {\n\
           , message\n\
         );\n\
 \n\
+        flag(this, 'object', err);\n\
         return this;\n\
       } else if ((message != null) && errMsg && 'string' === typeof errMsg) {\n\
         this.assert(\n\
@@ -2236,6 +2686,7 @@ module.exports = function (chai, _) {\n\
           , message\n\
         );\n\
 \n\
+        flag(this, 'object', err);\n\
         return this;\n\
       } else {\n\
         thrown = true;\n\
@@ -2258,9 +2709,11 @@ module.exports = function (chai, _) {\n\
         thrown === true\n\
       , 'expected #{this} to throw ' + expectedThrown + actuallyGot\n\
       , 'expected #{this} to not throw ' + expectedThrown + actuallyGot\n\
-      , desiredError\n\
-      , thrownError\n\
+      , (desiredError instanceof Error ? desiredError.toString() : desiredError)\n\
+      , (thrownError instanceof Error ? thrownError.toString() : thrownError)\n\
     );\n\
+\n\
+    flag(this, 'object', thrownError);\n\
   };\n\
 \n\
   Assertion.addMethod('throw', assertThrows);\n\
@@ -2372,9 +2825,13 @@ module.exports = function (chai, _) {\n\
     );\n\
   });\n\
 \n\
-  function isSubsetOf(subset, superset) {\n\
+  function isSubsetOf(subset, superset, cmp) {\n\
     return subset.every(function(elem) {\n\
-      return superset.indexOf(elem) !== -1;\n\
+      if (!cmp) return superset.indexOf(elem) !== -1;\n\
+\n\
+      return superset.some(function(elem2) {\n\
+        return cmp(elem, elem2);\n\
+      });\n\
     })\n\
   }\n\
 \n\
@@ -2382,13 +2839,17 @@ module.exports = function (chai, _) {\n\
    * ### .members(set)\n\
    *\n\
    * Asserts that the target is a superset of `set`,\n\
-   * or that the target and `set` have the same members.\n\
+   * or that the target and `set` have the same strictly-equal (===) members.\n\
+   * Alternately, if the `deep` flag is set, set members are compared for deep\n\
+   * equality.\n\
    *\n\
    *     expect([1, 2, 3]).to.include.members([3, 2]);\n\
    *     expect([1, 2, 3]).to.not.include.members([3, 2, 8]);\n\
    *\n\
    *     expect([4, 2]).to.have.members([2, 4]);\n\
    *     expect([5, 2]).to.not.have.members([5, 2, 1]);\n\
+   *\n\
+   *     expect([{ id: 1 }]).to.deep.include.members([{ id: 1 }]);\n\
    *\n\
    * @name members\n\
    * @param {Array} set\n\
@@ -2403,9 +2864,11 @@ module.exports = function (chai, _) {\n\
     new Assertion(obj).to.be.an('array');\n\
     new Assertion(subset).to.be.an('array');\n\
 \n\
+    var cmp = flag(this, 'deep') ? _.eql : undefined;\n\
+\n\
     if (flag(this, 'contains')) {\n\
       return this.assert(\n\
-          isSubsetOf(subset, obj)\n\
+          isSubsetOf(subset, obj, cmp)\n\
         , 'expected #{this} to be a superset of #{act}'\n\
         , 'expected #{this} to not be a superset of #{act}'\n\
         , obj\n\
@@ -2414,7 +2877,7 @@ module.exports = function (chai, _) {\n\
     }\n\
 \n\
     this.assert(\n\
-        isSubsetOf(obj, subset) && isSubsetOf(subset, obj)\n\
+        isSubsetOf(obj, subset, cmp) && isSubsetOf(subset, obj, cmp)\n\
         , 'expected #{this} to have the same members as #{act}'\n\
         , 'expected #{this} to not have the same members as #{act}'\n\
         , obj\n\
@@ -2422,12 +2885,14 @@ module.exports = function (chai, _) {\n\
     );\n\
   });\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/core/assertions.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/core/assertions.js"
 ));
-require.register("chaijs-chai/lib/chai/interface/assert.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/interface/assert.js", Function("exports, module",
 "/*!\n\
  * chai\n\
- * Copyright(c) 2011-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -2460,7 +2925,7 @@ module.exports = function (chai, util) {\n\
    */\n\
 \n\
   var assert = chai.assert = function (express, errmsg) {\n\
-    var test = new Assertion(null);\n\
+    var test = new Assertion(null, null, chai.assert);\n\
     test.assert(\n\
         express\n\
       , errmsg\n\
@@ -2482,13 +2947,12 @@ module.exports = function (chai, util) {\n\
    */\n\
 \n\
   assert.fail = function (actual, expected, message, operator) {\n\
-    throw new chai.AssertionError({\n\
+    message = message || 'assert.fail()';\n\
+    throw new chai.AssertionError(message, {\n\
         actual: actual\n\
       , expected: expected\n\
-      , message: message\n\
       , operator: operator\n\
-      , stackStartFunction: assert.fail\n\
-    });\n\
+    }, assert.fail);\n\
   };\n\
 \n\
   /**\n\
@@ -2542,7 +3006,7 @@ module.exports = function (chai, util) {\n\
    */\n\
 \n\
   assert.equal = function (act, exp, msg) {\n\
-    var test = new Assertion(act, msg);\n\
+    var test = new Assertion(act, msg, assert.equal);\n\
 \n\
     test.assert(\n\
         exp == flag(test, 'object')\n\
@@ -2568,7 +3032,7 @@ module.exports = function (chai, util) {\n\
    */\n\
 \n\
   assert.notEqual = function (act, exp, msg) {\n\
-    var test = new Assertion(act, msg);\n\
+    var test = new Assertion(act, msg, assert.notEqual);\n\
 \n\
     test.assert(\n\
         exp != flag(test, 'object')\n\
@@ -2819,8 +3283,8 @@ module.exports = function (chai, util) {\n\
    * Asserts that `value` is _not_ an object.\n\
    *\n\
    *     var selection = 'chai'\n\
-   *     assert.isObject(selection, 'tea selection is not an object');\n\
-   *     assert.isObject(null, 'null is not an object');\n\
+   *     assert.isNotObject(selection, 'tea selection is not an object');\n\
+   *     assert.isNotObject(null, 'null is not an object');\n\
    *\n\
    * @name isNotObject\n\
    * @param {Mixed} value\n\
@@ -3084,19 +3548,7 @@ module.exports = function (chai, util) {\n\
    */\n\
 \n\
   assert.include = function (exp, inc, msg) {\n\
-    var obj = new Assertion(exp, msg);\n\
-\n\
-    if (Array.isArray(exp)) {\n\
-      obj.to.include(inc);\n\
-    } else if ('string' === typeof exp) {\n\
-      obj.to.contain.string(inc);\n\
-    } else {\n\
-      throw new chai.AssertionError(\n\
-          'expected an array or string'\n\
-        , null\n\
-        , assert.include\n\
-      );\n\
-    }\n\
+    new Assertion(exp, msg, assert.include).include(inc);\n\
   };\n\
 \n\
   /**\n\
@@ -3116,19 +3568,7 @@ module.exports = function (chai, util) {\n\
    */\n\
 \n\
   assert.notInclude = function (exp, inc, msg) {\n\
-    var obj = new Assertion(exp, msg);\n\
-\n\
-    if (Array.isArray(exp)) {\n\
-      obj.to.not.include(inc);\n\
-    } else if ('string' === typeof exp) {\n\
-      obj.to.not.contain.string(inc);\n\
-    } else {\n\
-      throw new chai.AssertionError(\n\
-          'expected an array or string'\n\
-        , null\n\
-        , assert.notInclude\n\
-      );\n\
-    }\n\
+    new Assertion(exp, msg, assert.notInclude).not.include(inc);\n\
   };\n\
 \n\
   /**\n\
@@ -3372,7 +3812,8 @@ module.exports = function (chai, util) {\n\
       errt = null;\n\
     }\n\
 \n\
-    new Assertion(fn, msg).to.Throw(errt, errs);\n\
+    var assertErr = new Assertion(fn, msg).to.Throw(errt, errs);\n\
+    return flag(assertErr, 'object');\n\
   };\n\
 \n\
   /**\n\
@@ -3505,12 +3946,14 @@ module.exports = function (chai, util) {\n\
   ('Throw', 'throw')\n\
   ('Throw', 'throws');\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/interface/assert.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/interface/assert.js"
 ));
-require.register("chaijs-chai/lib/chai/interface/expect.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/interface/expect.js", Function("exports, module",
 "/*!\n\
  * chai\n\
- * Copyright(c) 2011-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -3520,12 +3963,14 @@ module.exports = function (chai, util) {\n\
   };\n\
 };\n\
 \n\
-//@ sourceURL=chaijs-chai/lib/chai/interface/expect.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/interface/expect.js"
 ));
-require.register("chaijs-chai/lib/chai/interface/should.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/interface/should.js", Function("exports, module",
 "/*!\n\
  * chai\n\
- * Copyright(c) 2011-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -3533,31 +3978,33 @@ module.exports = function (chai, util) {\n\
   var Assertion = chai.Assertion;\n\
 \n\
   function loadShould () {\n\
+    // explicitly define this method as function as to have it's name to include as `ssfi`\n\
+    function shouldGetter() {\n\
+      if (this instanceof String || this instanceof Number) {\n\
+        return new Assertion(this.constructor(this), null, shouldGetter);\n\
+      } else if (this instanceof Boolean) {\n\
+        return new Assertion(this == true, null, shouldGetter);\n\
+      }\n\
+      return new Assertion(this, null, shouldGetter);\n\
+    }\n\
+    function shouldSetter(value) {\n\
+      // See https://github.com/chaijs/chai/issues/86: this makes\n\
+      // `whatever.should = someValue` actually set `someValue`, which is\n\
+      // especially useful for `global.should = require('chai').should()`.\n\
+      //\n\
+      // Note that we have to use [[DefineProperty]] instead of [[Put]]\n\
+      // since otherwise we would trigger this very setter!\n\
+      Object.defineProperty(this, 'should', {\n\
+        value: value,\n\
+        enumerable: true,\n\
+        configurable: true,\n\
+        writable: true\n\
+      });\n\
+    }\n\
     // modify Object.prototype to have `should`\n\
-    Object.defineProperty(Object.prototype, 'should',\n\
-      {\n\
-        set: function (value) {\n\
-          // See https://github.com/chaijs/chai/issues/86: this makes\n\
-          // `whatever.should = someValue` actually set `someValue`, which is\n\
-          // especially useful for `global.should = require('chai').should()`.\n\
-          //\n\
-          // Note that we have to use [[DefineProperty]] instead of [[Put]]\n\
-          // since otherwise we would trigger this very setter!\n\
-          Object.defineProperty(this, 'should', {\n\
-            value: value,\n\
-            enumerable: true,\n\
-            configurable: true,\n\
-            writable: true\n\
-          });\n\
-        }\n\
-      , get: function(){\n\
-          if (this instanceof String || this instanceof Number) {\n\
-            return new Assertion(this.constructor(this));\n\
-          } else if (this instanceof Boolean) {\n\
-            return new Assertion(this == true);\n\
-          }\n\
-          return new Assertion(this);\n\
-        }\n\
+    Object.defineProperty(Object.prototype, 'should', {\n\
+      set: shouldSetter\n\
+      , get: shouldGetter\n\
       , configurable: true\n\
     });\n\
 \n\
@@ -3599,12 +4046,14 @@ module.exports = function (chai, util) {\n\
   chai.should = loadShould;\n\
   chai.Should = loadShould;\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/interface/should.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/interface/should.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/addChainableMethod.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/addChainableMethod.js", Function("exports, module",
 "/*!\n\
  * Chai - addChainingMethod utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -3612,7 +4061,9 @@ require.register("chaijs-chai/lib/chai/utils/addChainableMethod.js", Function("e
  * Module dependencies\n\
  */\n\
 \n\
-var transferFlags = require('./transferFlags');\n\
+var transferFlags = require(\"chaijs~chai@master/lib/chai/utils/transferFlags.js\");\n\
+var flag = require(\"chaijs~chai@master/lib/chai/utils/flag.js\");\n\
+var config = require(\"chaijs~chai@master/lib/chai/config.js\");\n\
 \n\
 /*!\n\
  * Module variables\n\
@@ -3659,15 +4110,30 @@ var call  = Function.prototype.call,\n\
  */\n\
 \n\
 module.exports = function (ctx, name, method, chainingBehavior) {\n\
-  if (typeof chainingBehavior !== 'function')\n\
+  if (typeof chainingBehavior !== 'function') {\n\
     chainingBehavior = function () { };\n\
+  }\n\
+\n\
+  var chainableBehavior = {\n\
+      method: method\n\
+    , chainingBehavior: chainingBehavior\n\
+  };\n\
+\n\
+  // save the methods so we can overwrite them later, if we need to.\n\
+  if (!ctx.__methods) {\n\
+    ctx.__methods = {};\n\
+  }\n\
+  ctx.__methods[name] = chainableBehavior;\n\
 \n\
   Object.defineProperty(ctx, name,\n\
     { get: function () {\n\
-        chainingBehavior.call(this);\n\
+        chainableBehavior.chainingBehavior.call(this);\n\
 \n\
-        var assert = function () {\n\
-          var result = method.apply(this, arguments);\n\
+        var assert = function assert() {\n\
+          var old_ssfi = flag(this, 'ssfi');\n\
+          if (old_ssfi && config.includeStack === false)\n\
+            flag(this, 'ssfi', assert);\n\
+          var result = chainableBehavior.method.apply(this, arguments);\n\
           return result === undefined ? this : result;\n\
         };\n\
 \n\
@@ -3696,14 +4162,18 @@ module.exports = function (ctx, name, method, chainingBehavior) {\n\
     , configurable: true\n\
   });\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/addChainableMethod.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/addChainableMethod.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/addMethod.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/addMethod.js", Function("exports, module",
 "/*!\n\
  * Chai - addMethod utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
+\n\
+var config = require(\"chaijs~chai@master/lib/chai/config.js\");\n\
 \n\
 /**\n\
  * ### .addMethod (ctx, name, method)\n\
@@ -3729,19 +4199,25 @@ require.register("chaijs-chai/lib/chai/utils/addMethod.js", Function("exports, r
  * @name addMethod\n\
  * @api public\n\
  */\n\
+var flag = require(\"chaijs~chai@master/lib/chai/utils/flag.js\");\n\
 \n\
 module.exports = function (ctx, name, method) {\n\
   ctx[name] = function () {\n\
+    var old_ssfi = flag(this, 'ssfi');\n\
+    if (old_ssfi && config.includeStack === false)\n\
+      flag(this, 'ssfi', ctx[name]);\n\
     var result = method.apply(this, arguments);\n\
     return result === undefined ? this : result;\n\
   };\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/addMethod.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/addMethod.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/addProperty.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/addProperty.js", Function("exports, module",
 "/*!\n\
  * Chai - addProperty utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -3779,144 +4255,14 @@ module.exports = function (ctx, name, getter) {\n\
     , configurable: true\n\
   });\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/addProperty.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/addProperty.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/eql.js", Function("exports, require, module",
-"// This is (almost) directly from Node.js assert\n\
-// https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/assert.js\n\
-\n\
-module.exports = _deepEqual;\n\
-\n\
-var getEnumerableProperties = require('./getEnumerableProperties');\n\
-\n\
-// for the browser\n\
-var Buffer;\n\
-try {\n\
-  Buffer = require('buffer').Buffer;\n\
-} catch (ex) {\n\
-  Buffer = {\n\
-    isBuffer: function () { return false; }\n\
-  };\n\
-}\n\
-\n\
-function _deepEqual(actual, expected, memos) {\n\
-\n\
-  // 7.1. All identical values are equivalent, as determined by ===.\n\
-  if (actual === expected) {\n\
-    return true;\n\
-\n\
-  } else if (Buffer.isBuffer(actual) && Buffer.isBuffer(expected)) {\n\
-    if (actual.length != expected.length) return false;\n\
-\n\
-    for (var i = 0; i < actual.length; i++) {\n\
-      if (actual[i] !== expected[i]) return false;\n\
-    }\n\
-\n\
-    return true;\n\
-\n\
-  // 7.2. If the expected value is a Date object, the actual value is\n\
-  // equivalent if it is also a Date object that refers to the same time.\n\
-  } else if (expected instanceof Date) {\n\
-    if (!(actual instanceof Date)) return false;\n\
-    return actual.getTime() === expected.getTime();\n\
-\n\
-  // 7.3. Other pairs that do not both pass typeof value == 'object',\n\
-  // equivalence is determined by ==.\n\
-  } else if (typeof actual != 'object' && typeof expected != 'object') {\n\
-    return actual === expected;\n\
-\n\
-  } else if (expected instanceof RegExp) {\n\
-    if (!(actual instanceof RegExp)) return false;\n\
-    return actual.toString() === expected.toString();\n\
-\n\
-  // 7.4. For all other Object pairs, including Array objects, equivalence is\n\
-  // determined by having the same number of owned properties (as verified\n\
-  // with Object.prototype.hasOwnProperty.call), the same set of keys\n\
-  // (although not necessarily the same order), equivalent values for every\n\
-  // corresponding key, and an identical 'prototype' property. Note: this\n\
-  // accounts for both named and indexed properties on Arrays.\n\
-  } else {\n\
-    return objEquiv(actual, expected, memos);\n\
-  }\n\
-}\n\
-\n\
-function isUndefinedOrNull(value) {\n\
-  return value === null || value === undefined;\n\
-}\n\
-\n\
-function isArguments(object) {\n\
-  return Object.prototype.toString.call(object) == '[object Arguments]';\n\
-}\n\
-\n\
-function objEquiv(a, b, memos) {\n\
-  if (isUndefinedOrNull(a) || isUndefinedOrNull(b))\n\
-    return false;\n\
-\n\
-  // an identical 'prototype' property.\n\
-  if (a.prototype !== b.prototype) return false;\n\
-\n\
-  // check if we have already compared a and b\n\
-  var i;\n\
-  if (memos) {\n\
-    for(i = 0; i < memos.length; i++) {\n\
-      if ((memos[i][0] === a && memos[i][1] === b) ||\n\
-          (memos[i][0] === b && memos[i][1] === a))\n\
-        return true;\n\
-    }\n\
-  } else {\n\
-    memos = [];\n\
-  }\n\
-\n\
-  //~~~I've managed to break Object.keys through screwy arguments passing.\n\
-  //   Converting to array solves the problem.\n\
-  if (isArguments(a)) {\n\
-    if (!isArguments(b)) {\n\
-      return false;\n\
-    }\n\
-    a = pSlice.call(a);\n\
-    b = pSlice.call(b);\n\
-    return _deepEqual(a, b, memos);\n\
-  }\n\
-  try {\n\
-    var ka = getEnumerableProperties(a),\n\
-        kb = getEnumerableProperties(b),\n\
-        key;\n\
-  } catch (e) {//happens when one is a string literal and the other isn't\n\
-    return false;\n\
-  }\n\
-\n\
-  // having the same number of owned properties (keys incorporates\n\
-  // hasOwnProperty)\n\
-  if (ka.length != kb.length)\n\
-    return false;\n\
-\n\
-  //the same set of keys (although not necessarily the same order),\n\
-  ka.sort();\n\
-  kb.sort();\n\
-  //~~~cheap key test\n\
-  for (i = ka.length - 1; i >= 0; i--) {\n\
-    if (ka[i] != kb[i])\n\
-      return false;\n\
-  }\n\
-\n\
-  // remember objects we have compared to guard against circular references\n\
-  memos.push([ a, b ]);\n\
-\n\
-  //equivalent values for every corresponding key, and\n\
-  //~~~possibly expensive deep test\n\
-  for (i = ka.length - 1; i >= 0; i--) {\n\
-    key = ka[i];\n\
-    if (!_deepEqual(a[key], b[key], memos)) return false;\n\
-  }\n\
-\n\
-  return true;\n\
-}\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/eql.js"
-));
-require.register("chaijs-chai/lib/chai/utils/flag.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/flag.js", Function("exports, module",
 "/*!\n\
  * Chai - flag utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -3946,12 +4292,14 @@ module.exports = function (obj, key, value) {\n\
     return flags[key];\n\
   }\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/flag.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/flag.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/getActual.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/getActual.js", Function("exports, module",
 "/*!\n\
  * Chai - getActual utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -3965,15 +4313,16 @@ require.register("chaijs-chai/lib/chai/utils/getActual.js", Function("exports, r
  */\n\
 \n\
 module.exports = function (obj, args) {\n\
-  var actual = args[4];\n\
-  return 'undefined' !== typeof actual ? actual : obj._obj;\n\
+  return args.length > 4 ? args[4] : obj._obj;\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/getActual.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/getActual.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/getEnumerableProperties.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/getEnumerableProperties.js", Function("exports, module",
 "/*!\n\
  * Chai - getEnumerableProperties utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -3996,12 +4345,14 @@ module.exports = function getEnumerableProperties(object) {\n\
   }\n\
   return result;\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/getEnumerableProperties.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/getEnumerableProperties.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/getMessage.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/getMessage.js", Function("exports, module",
 "/*!\n\
  * Chai - message composition utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4009,10 +4360,10 @@ require.register("chaijs-chai/lib/chai/utils/getMessage.js", Function("exports, 
  * Module dependancies\n\
  */\n\
 \n\
-var flag = require('./flag')\n\
-  , getActual = require('./getActual')\n\
-  , inspect = require('./inspect')\n\
-  , objDisplay = require('./objDisplay');\n\
+var flag = require(\"chaijs~chai@master/lib/chai/utils/flag.js\")\n\
+  , getActual = require(\"chaijs~chai@master/lib/chai/utils/getActual.js\")\n\
+  , inspect = require(\"chaijs~chai@master/lib/chai/utils/inspect.js\")\n\
+  , objDisplay = require(\"chaijs~chai@master/lib/chai/utils/objDisplay.js\");\n\
 \n\
 /**\n\
  * ### .getMessage(object, message, negateMessage)\n\
@@ -4048,12 +4399,14 @@ module.exports = function (obj, args) {\n\
 \n\
   return flagMsg ? flagMsg + ': ' + msg : msg;\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/getMessage.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/getMessage.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/getName.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/getName.js", Function("exports, module",
 "/*!\n\
  * Chai - getName utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4071,12 +4424,14 @@ module.exports = function (func) {\n\
   var match = /^\\s?function ([^(]*)\\(/.exec(func);\n\
   return match && match[1] ? match[1] : \"\";\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/getName.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/getName.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/getPathValue.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/getPathValue.js", Function("exports, module",
 "/*!\n\
  * Chai - getPathValue utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * @see https://github.com/logicalparadox/filtr\n\
  * MIT Licensed\n\
  */\n\
@@ -4176,12 +4531,14 @@ function _getPathValue (parsed, obj) {\n\
   }\n\
   return res;\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/getPathValue.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/getPathValue.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/getProperties.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/getProperties.js", Function("exports, module",
 "/*!\n\
  * Chai - getProperties utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4214,9 +4571,11 @@ module.exports = function getProperties(object) {\n\
 \n\
   return result;\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/getProperties.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/getProperties.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/index.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/index.js", Function("exports, module",
 "/*!\n\
  * chai\n\
  * Copyright(c) 2011 Jake Luer <jake@alogicalparadox.com>\n\
@@ -4233,107 +4592,115 @@ var exports = module.exports = {};\n\
  * test utility\n\
  */\n\
 \n\
-exports.test = require('./test');\n\
+exports.test = require(\"chaijs~chai@master/lib/chai/utils/test.js\");\n\
 \n\
 /*!\n\
  * type utility\n\
  */\n\
 \n\
-exports.type = require('./type');\n\
+exports.type = require(\"chaijs~chai@master/lib/chai/utils/type.js\");\n\
 \n\
 /*!\n\
  * message utility\n\
  */\n\
 \n\
-exports.getMessage = require('./getMessage');\n\
+exports.getMessage = require(\"chaijs~chai@master/lib/chai/utils/getMessage.js\");\n\
 \n\
 /*!\n\
  * actual utility\n\
  */\n\
 \n\
-exports.getActual = require('./getActual');\n\
+exports.getActual = require(\"chaijs~chai@master/lib/chai/utils/getActual.js\");\n\
 \n\
 /*!\n\
  * Inspect util\n\
  */\n\
 \n\
-exports.inspect = require('./inspect');\n\
+exports.inspect = require(\"chaijs~chai@master/lib/chai/utils/inspect.js\");\n\
 \n\
 /*!\n\
  * Object Display util\n\
  */\n\
 \n\
-exports.objDisplay = require('./objDisplay');\n\
+exports.objDisplay = require(\"chaijs~chai@master/lib/chai/utils/objDisplay.js\");\n\
 \n\
 /*!\n\
  * Flag utility\n\
  */\n\
 \n\
-exports.flag = require('./flag');\n\
+exports.flag = require(\"chaijs~chai@master/lib/chai/utils/flag.js\");\n\
 \n\
 /*!\n\
  * Flag transferring utility\n\
  */\n\
 \n\
-exports.transferFlags = require('./transferFlags');\n\
+exports.transferFlags = require(\"chaijs~chai@master/lib/chai/utils/transferFlags.js\");\n\
 \n\
 /*!\n\
  * Deep equal utility\n\
  */\n\
 \n\
-exports.eql = require('./eql');\n\
+exports.eql = require(\"chaijs~deep-eql@0.1.3\");\n\
 \n\
 /*!\n\
  * Deep path value\n\
  */\n\
 \n\
-exports.getPathValue = require('./getPathValue');\n\
+exports.getPathValue = require(\"chaijs~chai@master/lib/chai/utils/getPathValue.js\");\n\
 \n\
 /*!\n\
  * Function name\n\
  */\n\
 \n\
-exports.getName = require('./getName');\n\
+exports.getName = require(\"chaijs~chai@master/lib/chai/utils/getName.js\");\n\
 \n\
 /*!\n\
  * add Property\n\
  */\n\
 \n\
-exports.addProperty = require('./addProperty');\n\
+exports.addProperty = require(\"chaijs~chai@master/lib/chai/utils/addProperty.js\");\n\
 \n\
 /*!\n\
  * add Method\n\
  */\n\
 \n\
-exports.addMethod = require('./addMethod');\n\
+exports.addMethod = require(\"chaijs~chai@master/lib/chai/utils/addMethod.js\");\n\
 \n\
 /*!\n\
  * overwrite Property\n\
  */\n\
 \n\
-exports.overwriteProperty = require('./overwriteProperty');\n\
+exports.overwriteProperty = require(\"chaijs~chai@master/lib/chai/utils/overwriteProperty.js\");\n\
 \n\
 /*!\n\
  * overwrite Method\n\
  */\n\
 \n\
-exports.overwriteMethod = require('./overwriteMethod');\n\
+exports.overwriteMethod = require(\"chaijs~chai@master/lib/chai/utils/overwriteMethod.js\");\n\
 \n\
 /*!\n\
  * Add a chainable method\n\
  */\n\
 \n\
-exports.addChainableMethod = require('./addChainableMethod');\n\
+exports.addChainableMethod = require(\"chaijs~chai@master/lib/chai/utils/addChainableMethod.js\");\n\
 \n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/index.js"
+/*!\n\
+ * Overwrite chainable method\n\
+ */\n\
+\n\
+exports.overwriteChainableMethod = require(\"chaijs~chai@master/lib/chai/utils/overwriteChainableMethod.js\");\n\
+\n\
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/index.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/inspect.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/inspect.js", Function("exports, module",
 "// This is (almost) directly from Node.js utils\n\
 // https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js\n\
 \n\
-var getName = require('./getName');\n\
-var getProperties = require('./getProperties');\n\
-var getEnumerableProperties = require('./getEnumerableProperties');\n\
+var getName = require(\"chaijs~chai@master/lib/chai/utils/getName.js\");\n\
+var getProperties = require(\"chaijs~chai@master/lib/chai/utils/getProperties.js\");\n\
+var getEnumerableProperties = require(\"chaijs~chai@master/lib/chai/utils/getEnumerableProperties.js\");\n\
 \n\
 module.exports = inspect;\n\
 \n\
@@ -4657,12 +5024,14 @@ function isError(e) {\n\
 function objectToString(o) {\n\
   return Object.prototype.toString.call(o);\n\
 }\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/inspect.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/inspect.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/objDisplay.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/objDisplay.js", Function("exports, module",
 "/*!\n\
  * Chai - flag utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4670,7 +5039,8 @@ require.register("chaijs-chai/lib/chai/utils/objDisplay.js", Function("exports, 
  * Module dependancies\n\
  */\n\
 \n\
-var inspect = require('./inspect');\n\
+var inspect = require(\"chaijs~chai@master/lib/chai/utils/inspect.js\");\n\
+var config = require(\"chaijs~chai@master/lib/chai/config.js\");\n\
 \n\
 /**\n\
  * ### .objDisplay (object)\n\
@@ -4688,7 +5058,7 @@ module.exports = function (obj) {\n\
   var str = inspect(obj)\n\
     , type = Object.prototype.toString.call(obj);\n\
 \n\
-  if (str.length >= 40) {\n\
+  if (config.truncateThreshold && str.length >= config.truncateThreshold) {\n\
     if (type === '[object Function]') {\n\
       return !obj.name || obj.name === ''\n\
         ? '[Function]'\n\
@@ -4708,12 +5078,14 @@ module.exports = function (obj) {\n\
     return str;\n\
   }\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/objDisplay.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/objDisplay.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/overwriteMethod.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/overwriteMethod.js", Function("exports, module",
 "/*!\n\
  * Chai - overwriteMethod utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4762,12 +5134,14 @@ module.exports = function (ctx, name, method) {\n\
     return result === undefined ? this : result;\n\
   }\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/overwriteMethod.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/overwriteMethod.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/overwriteProperty.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/overwriteProperty.js", Function("exports, module",
 "/*!\n\
  * Chai - overwriteProperty utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4819,12 +5193,72 @@ module.exports = function (ctx, name, getter) {\n\
     , configurable: true\n\
   });\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/overwriteProperty.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/overwriteProperty.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/test.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/overwriteChainableMethod.js", Function("exports, module",
+"/*!\n\
+ * Chai - overwriteChainableMethod utility\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
+ * MIT Licensed\n\
+ */\n\
+\n\
+/**\n\
+ * ### overwriteChainableMethod (ctx, name, fn)\n\
+ *\n\
+ * Overwites an already existing chainable method\n\
+ * and provides access to the previous function or\n\
+ * property.  Must return functions to be used for\n\
+ * name.\n\
+ *\n\
+ *     utils.overwriteChainableMethod(chai.Assertion.prototype, 'length',\n\
+ *       function (_super) {\n\
+ *       }\n\
+ *     , function (_super) {\n\
+ *       }\n\
+ *     );\n\
+ *\n\
+ * Can also be accessed directly from `chai.Assertion`.\n\
+ *\n\
+ *     chai.Assertion.overwriteChainableMethod('foo', fn, fn);\n\
+ *\n\
+ * Then can be used as any other assertion.\n\
+ *\n\
+ *     expect(myFoo).to.have.length(3);\n\
+ *     expect(myFoo).to.have.length.above(3);\n\
+ *\n\
+ * @param {Object} ctx object whose method / property is to be overwritten\n\
+ * @param {String} name of method / property to overwrite\n\
+ * @param {Function} method function that returns a function to be used for name\n\
+ * @param {Function} chainingBehavior function that returns a function to be used for property\n\
+ * @name overwriteChainableMethod\n\
+ * @api public\n\
+ */\n\
+\n\
+module.exports = function (ctx, name, method, chainingBehavior) {\n\
+  var chainableBehavior = ctx.__methods[name];\n\
+\n\
+  var _chainingBehavior = chainableBehavior.chainingBehavior;\n\
+  chainableBehavior.chainingBehavior = function () {\n\
+    var result = chainingBehavior(_chainingBehavior).call(this);\n\
+    return result === undefined ? this : result;\n\
+  };\n\
+\n\
+  var _method = chainableBehavior.method;\n\
+  chainableBehavior.method = function () {\n\
+    var result = method(_method).apply(this, arguments);\n\
+    return result === undefined ? this : result;\n\
+  };\n\
+};\n\
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/overwriteChainableMethod.js"
+));
+
+require.register("chaijs~chai@master/lib/chai/utils/test.js", Function("exports, module",
 "/*!\n\
  * Chai - test utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4832,7 +5266,7 @@ require.register("chaijs-chai/lib/chai/utils/test.js", Function("exports, requir
  * Module dependancies\n\
  */\n\
 \n\
-var flag = require('./flag');\n\
+var flag = require(\"chaijs~chai@master/lib/chai/utils/flag.js\");\n\
 \n\
 /**\n\
  * # test(object, expression)\n\
@@ -4848,12 +5282,14 @@ module.exports = function (obj, args) {\n\
     , expr = args[0];\n\
   return negate ? !expr : expr;\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/test.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/test.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/transferFlags.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/transferFlags.js", Function("exports, module",
 "/*!\n\
  * Chai - transferFlags utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4895,12 +5331,14 @@ module.exports = function (assertion, object, includeAll) {\n\
     }\n\
   }\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/transferFlags.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/transferFlags.js"
 ));
-require.register("chaijs-chai/lib/chai/utils/type.js", Function("exports, require, module",
+
+require.register("chaijs~chai@master/lib/chai/utils/type.js", Function("exports, module",
 "/*!\n\
  * Chai - type utility\n\
- * Copyright(c) 2012-2013 Jake Luer <jake@alogicalparadox.com>\n\
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>\n\
  * MIT Licensed\n\
  */\n\
 \n\
@@ -4943,9 +5381,16 @@ module.exports = function (obj) {\n\
   if (obj === Object(obj)) return 'object';\n\
   return typeof obj;\n\
 };\n\
-//@ sourceURL=chaijs-chai/lib/chai/utils/type.js"
+\n\
+//# sourceURL=components/chaijs/chai/master/lib/chai/utils/type.js"
 ));
-require.register("visionmedia-mocha-cloud/client.js", Function("exports, require, module",
+
+require.modules["chaijs-chai"] = require.modules["chaijs~chai@master"];
+require.modules["chaijs~chai"] = require.modules["chaijs~chai@master"];
+require.modules["chai"] = require.modules["chaijs~chai@master"];
+
+
+require.register("visionmedia~mocha-cloud@master", Function("exports, module",
 "\n\
 /**\n\
  * Listen to `runner` events to populate a global\n\
@@ -4976,18 +5421,24 @@ module.exports = function(runner){\n\
     runner.stats.failed = failed;\n\
     global.mochaResults = runner.stats;\n\
   });\n\
-};//@ sourceURL=visionmedia-mocha-cloud/client.js"
+};\n\
+//# sourceURL=components/visionmedia/mocha-cloud/master/client.js"
 ));
-require.register("modelfactory/lib/index.js", Function("exports, require, module",
-"\n\
-/*!\n\
+
+require.modules["visionmedia-mocha-cloud"] = require.modules["visionmedia~mocha-cloud@master"];
+require.modules["visionmedia~mocha-cloud"] = require.modules["visionmedia~mocha-cloud@master"];
+require.modules["mocha-cloud"] = require.modules["visionmedia~mocha-cloud@master"];
+
+
+require.register("modelfactory", Function("exports, module",
+"/*!\n\
  * deps\n\
  */\n\
 \n\
-var Schema = require('./schema'),\n\
-    Model = require('./model'),\n\
-    globals = require('./globals'),\n\
-    Errors = require('./errors'),\n\
+var Schema = require(\"modelfactory/lib/schema.js\"),\n\
+    Model = require(\"modelfactory/lib/model.js\"),\n\
+    globals = require(\"modelfactory/lib/globals.js\"),\n\
+    Errors = require(\"modelfactory/lib/errors/index.js\"),\n\
     idCounter = 0;\n\
 \n\
 /*!\n\
@@ -4995,9 +5446,9 @@ var Schema = require('./schema'),\n\
  */\n\
 \n\
 var modelfactory = {},\n\
+    models = {},\n\
     plugins = [],\n\
     define, compile;\n\
-\n\
 \n\
 /**\n\
  * create unique id\n\
@@ -5094,7 +5545,6 @@ define = function define(prop, subprops, prototype, prefix) {\n\
   }\n\
 };\n\
 \n\
-\n\
 /**\n\
  * Declares a global plugin executed on all Schemas.\n\
  *\n\
@@ -5112,20 +5562,39 @@ modelfactory.plugin = function (fn, opts) {\n\
 };\n\
 \n\
 /**\n\
- * model factory\n\
+ * model factory. create or get a model\n\
  *\n\
  * example:\n\
+ *\n\
+ *   // define a model\n\
  *   User = modelfactory.model({\n\
  *     firstname: String,\n\
  *     lastname: String,\n\
  *   })\n\
  *\n\
- * @param  {Schema} schema\n\
+ *   // define a named model\n\
+ *   User = modelfactory.model('User', {\n\
+ *     firstname: String,\n\
+ *     lastname: String,\n\
+ *   })\n\
+\n\
+ *   // get a named model\n\
+ *   User = modelfactory.model('User')\n\
+ *\n\
  * @return {Model} the model class constructor\n\
  * @api public\n\
  */\n\
 \n\
-modelfactory.model = function (schema) {\n\
+modelfactory.model = function (name, schema) {\n\
+\n\
+  // call with a string - modelfactory.model('foo')\n\
+  if (typeof(name) === 'string' && !schema) return models[name];\n\
+\n\
+  // call without name - modelfactory.model(myschema)\n\
+  if (!schema) {\n\
+    schema = name;\n\
+    name = null;\n\
+  }\n\
 \n\
   // cast to Schema instance?\n\
   if (!(schema instanceof Schema)) {\n\
@@ -5168,6 +5637,9 @@ modelfactory.model = function (schema) {\n\
   // store generated model\n\
   schema.model = model;\n\
 \n\
+  // reference named model\n\
+  if (name) models[name] = model;\n\
+\n\
   // inherit from Model\n\
   model.prototype.__proto__ = Model.prototype;\n\
 \n\
@@ -5189,13 +5661,15 @@ modelfactory.model = function (schema) {\n\
  * to DocumentArray to let them create EmbeddedDocument\n\
  */\n\
 \n\
-require('./schema/documentarray').model = module.exports.model;\n\
-//@ sourceURL=modelfactory/lib/index.js"
+require(\"modelfactory/lib/schema/documentarray.js\").model = module.exports.model;\n\
+\n\
+//# sourceURL=lib/index.js"
 ));
-require.register("modelfactory/lib/model.js", Function("exports, require, module",
-"var Emitter = require('emitter'),\n\
-    utils = require('./utils'),\n\
-    globals = require('./globals'),\n\
+
+require.register("modelfactory/lib/model.js", Function("exports, module",
+"var Emitter = require(\"component~emitter@1.1.2\"),\n\
+    utils = require(\"modelfactory/lib/utils.js\"),\n\
+    globals = require(\"modelfactory/lib/globals.js\"),\n\
     getPath = utils.getPath,\n\
     hasPath = utils.hasPath,\n\
     setPath = utils.setPath;\n\
@@ -5548,16 +6022,20 @@ Model.prototype.pick = function (ppties) {\n\
 Model.prototype.toJSON = function () {\n\
   var obj = {};\n\
   Object.keys(this.schema.tree).forEach(function (key) {\n\
-    obj[key] = (this._doc[key] && this._doc[key].toJSON)\n\
-             ? this._doc[key].toJSON()\n\
-             : this._doc[key];\n\
+    if (this._doc[key] && this._doc[key].toJSON) {\n\
+      obj[key] = this._doc[key].toJSON();\n\
+    } else if (this._doc[key] !== undefined) {\n\
+      obj[key] = this._doc[key];\n\
+    }\n\
   }, this);\n\
   return obj;\n\
 };\n\
 \n\
-//@ sourceURL=modelfactory/lib/model.js"
+\n\
+//# sourceURL=lib/model.js"
 ));
-require.register("modelfactory/lib/utils.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/utils.js", Function("exports, module",
 "/**\n\
  * get nested property\n\
  * @param  {Object} obj\n\
@@ -5618,22 +6096,26 @@ module.exports.setPath = function setPath(obj, path, val) {\n\
 \n\
   if (obj) obj[last] = val;\n\
 };\n\
-//@ sourceURL=modelfactory/lib/utils.js"
+\n\
+//# sourceURL=lib/utils.js"
 ));
-require.register("modelfactory/lib/globals.js", Function("exports, require, module",
-"module.exports.idAttribute = '_id';//@ sourceURL=modelfactory/lib/globals.js"
+
+require.register("modelfactory/lib/globals.js", Function("exports, module",
+"module.exports.idAttribute = '_id';\n\
+//# sourceURL=lib/globals.js"
 ));
-require.register("modelfactory/lib/schema.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema.js", Function("exports, module",
 "\n\
 /**\n\
  * module dependencies\n\
  */\n\
 \n\
-var Types = require('./schema/index'),\n\
-    VirtualType = require('./virtualType'),\n\
-    utils = require('./utils'),\n\
-    Store = require('./store'),\n\
-    globals = require('./globals'),\n\
+var Types = require(\"modelfactory/lib/schema/index.js\"),\n\
+    VirtualType = require(\"modelfactory/lib/virtualType.js\"),\n\
+    utils = require(\"modelfactory/lib/utils.js\"),\n\
+    Store = require(\"modelfactory/lib/store.js\"),\n\
+    globals = require(\"modelfactory/lib/globals.js\"),\n\
     hasPath = utils.hasPath;\n\
 \n\
 /**\n\
@@ -5705,23 +6187,24 @@ Schema.prototype.add = function(obj, prefix) {\n\
   prefix || (prefix = '');\n\
 \n\
   Object.keys(obj).forEach(function(key) {\n\
+    var val = obj[key];\n\
 \n\
-    if (!obj[key]) {\n\
+    if (!val) {\n\
       throw new TypeError('Invalid value for schema path `' + (prefix + key) + '`');\n\
     }\n\
 \n\
-    if (obj[key].constructor && obj[key].constructor.name !== 'Object') {\n\
-      obj[key] = {type: obj[key]};\n\
+    if (val.constructor && val.constructor.name !== 'Object') {\n\
+      val = {type: val};\n\
     }\n\
 \n\
-    if (Array.isArray(obj[key]) || Array.isArray(obj[key].type)) {\n\
-      this.path(prefix + key, obj[key]);\n\
-    } else if (obj[key].type instanceof Schema) {\n\
-      this.path(prefix + key, obj[key]);\n\
-    } else if (obj[key].type && 'function' === typeof obj[key].type) {\n\
-      this.path(prefix + key, obj[key]);\n\
+    if (Array.isArray(val) || Array.isArray(val.type)) {\n\
+      this.path(prefix + key, val);\n\
+    } else if (val.type instanceof Schema) {\n\
+      this.path(prefix + key, val);\n\
+    } else if (val.type && 'function' === typeof val.type) {\n\
+      this.path(prefix + key, val);\n\
     } else {\n\
-      this.add(obj[key], prefix + key + '.');\n\
+      this.add(val, prefix + key + '.');\n\
     }\n\
   }, this);\n\
 };\n\
@@ -5917,10 +6400,12 @@ Schema.prototype.static = function(name, fn) {\n\
     this.statics[name] = fn;\n\
   }\n\
   return this;\n\
-};//@ sourceURL=modelfactory/lib/schema.js"
+};\n\
+//# sourceURL=lib/schema.js"
 ));
-require.register("modelfactory/lib/store.js", Function("exports, require, module",
-"var globals = require('./globals');\n\
+
+require.register("modelfactory/lib/store.js", Function("exports, module",
+"var globals = require(\"modelfactory/lib/globals.js\");\n\
 var noop = function () {};\n\
 \n\
 /**\n\
@@ -6053,9 +6538,11 @@ Store.noop = {\n\
 \n\
 module.exports = Store;\n\
 \n\
-//@ sourceURL=modelfactory/lib/store.js"
+\n\
+//# sourceURL=lib/store.js"
 ));
-require.register("modelfactory/lib/type.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/type.js", Function("exports, module",
 "/**\n\
  * Type constructor\n\
  *\n\
@@ -6180,15 +6667,17 @@ Type.prototype.getDefault = function (scope) {\n\
   return ret;\n\
 };\n\
 \n\
-//@ sourceURL=modelfactory/lib/type.js"
+\n\
+//# sourceURL=lib/type.js"
 ));
-require.register("modelfactory/lib/schemaType.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schemaType.js", Function("exports, module",
 "/**\n\
  * module deps\n\
  */\n\
 \n\
-var ValidatorError = require('./errors/validator'),\n\
-    Type = require('./type');\n\
+var ValidatorError = require(\"modelfactory/lib/errors/validator.js\"),\n\
+    Type = require(\"modelfactory/lib/type.js\");\n\
 \n\
 /**\n\
  * SchemaType constructor\n\
@@ -6276,14 +6765,16 @@ SchemaType.prototype.required = function() {\n\
   return this.validators.push([check, 'required']);\n\
 };\n\
 \n\
-//@ sourceURL=modelfactory/lib/schemaType.js"
+\n\
+//# sourceURL=lib/schemaType.js"
 ));
-require.register("modelfactory/lib/virtualType.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/virtualType.js", Function("exports, module",
 "/**\n\
  * module dependencies\n\
  */\n\
 \n\
-var Type = require('./type');\n\
+var Type = require(\"modelfactory/lib/type.js\");\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -6308,13 +6799,17 @@ module.exports = VirtualType;\n\
  */\n\
 \n\
 VirtualType.prototype.__proto__ = Type.prototype;\n\
-//@ sourceURL=modelfactory/lib/virtualType.js"
+\n\
+//# sourceURL=lib/virtualType.js"
 ));
-require.register("modelfactory/lib/errors/index.js", Function("exports, require, module",
-"module.exports.ValidatorError = require('./validator');\n\
-module.exports.CastError = require('./cast');//@ sourceURL=modelfactory/lib/errors/index.js"
+
+require.register("modelfactory/lib/errors/index.js", Function("exports, module",
+"module.exports.ValidatorError = require(\"modelfactory/lib/errors/validator.js\");\n\
+module.exports.CastError = require(\"modelfactory/lib/errors/cast.js\");\n\
+//# sourceURL=lib/errors/index.js"
 ));
-require.register("modelfactory/lib/errors/validator.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/errors/validator.js", Function("exports, module",
 "/**\n\
  * Validator error\n\
  * @param {String} path\n\
@@ -6347,9 +6842,11 @@ ValidatorError.prototype.__proto__ = Error.prototype;\n\
  */\n\
 \n\
 module.exports = ValidatorError;\n\
-//@ sourceURL=modelfactory/lib/errors/validator.js"
+\n\
+//# sourceURL=lib/errors/validator.js"
 ));
-require.register("modelfactory/lib/errors/cast.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/errors/cast.js", Function("exports, module",
 "/**\n\
  * Cast error\n\
  *\n\
@@ -6382,21 +6879,25 @@ CastError.prototype.__proto__ = Error.prototype;\n\
  */\n\
 \n\
 module.exports = CastError;\n\
-//@ sourceURL=modelfactory/lib/errors/cast.js"
+\n\
+//# sourceURL=lib/errors/cast.js"
 ));
-require.register("modelfactory/lib/schema/index.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema/index.js", Function("exports, module",
 "/*!\n\
  * module exports\n\
  */\n\
 \n\
 var types = {\n\
-  String: require('./string'),\n\
-  ObjectId: require('./objectid'),\n\
-  Number: require('./number'),\n\
-  Boolean: require('./boolean'),\n\
-  Date: require('./date'),\n\
-  DocumentArray: require('./documentarray'),\n\
-  EmbeddedDocument: require('./embedded')\n\
+  String: require(\"modelfactory/lib/schema/string.js\"),\n\
+  Number: require(\"modelfactory/lib/schema/number.js\"),\n\
+  Boolean: require(\"modelfactory/lib/schema/boolean.js\"),\n\
+  Date: require(\"modelfactory/lib/schema/date.js\"),\n\
+  Array: require(\"modelfactory/lib/schema/documentarray.js\"),\n\
+  ObjectId: require(\"modelfactory/lib/schema/objectid.js\"),\n\
+  Mixed: require(\"modelfactory/lib/schema/mixed.js\"),\n\
+  DocumentArray: require(\"modelfactory/lib/schema/documentarray.js\"),\n\
+  EmbeddedDocument: require(\"modelfactory/lib/schema/embedded.js\")\n\
 };\n\
 \n\
 module.exports = types;\n\
@@ -6417,7 +6918,9 @@ module.exports = types;\n\
 module.exports.getSchemaType = function getType (type) {\n\
 \n\
   // fix resolution after mangling for non standard types\n\
-  if (type === types.ObjectId) return types.ObjectId;\n\
+  if (type === types.ObjectId || type === types.Mixed) {\n\
+    return type;\n\
+  }\n\
 \n\
   var name = 'string' === typeof type\n\
     ? type\n\
@@ -6433,15 +6936,17 @@ module.exports.getSchemaType = function getType (type) {\n\
 \n\
 types.DocumentArray.getSchemaType = module.exports.getSchemaType;\n\
 \n\
-//@ sourceURL=modelfactory/lib/schema/index.js"
+\n\
+//# sourceURL=lib/schema/index.js"
 ));
-require.register("modelfactory/lib/schema/date.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema/date.js", Function("exports, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType'),\n\
-    Errors = require('../errors'),\n\
+var SchemaType = require(\"modelfactory/lib/schemaType.js\"),\n\
+    Errors = require(\"modelfactory/lib/errors/index.js\"),\n\
     CastError = Errors.CastError;\n\
 \n\
 /**\n\
@@ -6469,7 +6974,8 @@ DateType.prototype.__proto__ = SchemaType.prototype;\n\
  */\n\
 \n\
 DateType.prototype.cast = function (value) {\n\
-  if (value === null || value === '') return null;\n\
+  if ('' === value) return null;\n\
+  if (!value) return value;\n\
   if (value instanceof Date) return value;\n\
 \n\
   var date;\n\
@@ -6495,14 +7001,16 @@ DateType.prototype.cast = function (value) {\n\
  */\n\
 \n\
 module.exports = DateType;\n\
-//@ sourceURL=modelfactory/lib/schema/date.js"
+\n\
+//# sourceURL=lib/schema/date.js"
 ));
-require.register("modelfactory/lib/schema/boolean.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema/boolean.js", Function("exports, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
+var SchemaType = require(\"modelfactory/lib/schemaType.js\");\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -6541,15 +7049,17 @@ BooleanType.prototype.cast = function (value) {\n\
  */\n\
 \n\
 module.exports = BooleanType;\n\
-//@ sourceURL=modelfactory/lib/schema/boolean.js"
+\n\
+//# sourceURL=lib/schema/boolean.js"
 ));
-require.register("modelfactory/lib/schema/number.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema/number.js", Function("exports, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType'),\n\
-    Errors = require('../errors'),\n\
+var SchemaType = require(\"modelfactory/lib/schemaType.js\"),\n\
+    Errors = require(\"modelfactory/lib/errors/index.js\"),\n\
     CastError = Errors.CastError;\n\
 \n\
 /**\n\
@@ -6613,24 +7123,27 @@ NumberType.prototype.max = function(val) {\n\
  */\n\
 \n\
 NumberType.prototype.cast = function (value) {\n\
+  if ('' === value) return null;\n\
+  if (!value) return value;\n\
+\n\
   if (!isNaN(value)){\n\
-    if (null === value) return value;\n\
-    if ('' === value) return null;\n\
     if ('string' === typeof value) value = Number(value);\n\
     if (value instanceof Number) return value;\n\
     if ('number' === typeof value) return value;\n\
   }\n\
 \n\
   throw new CastError(this.path, 'number', value);\n\
-};//@ sourceURL=modelfactory/lib/schema/number.js"
+};\n\
+//# sourceURL=lib/schema/number.js"
 ));
-require.register("modelfactory/lib/schema/string.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema/string.js", Function("exports, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType'),\n\
-    Errors = require('../errors'),\n\
+var SchemaType = require(\"modelfactory/lib/schemaType.js\"),\n\
+    Errors = require(\"modelfactory/lib/errors/index.js\"),\n\
     CastError = Errors.CastError;\n\
 \n\
 /**\n\
@@ -6698,14 +7211,50 @@ StringType.prototype.cast = function (value) {\n\
   if (!value) return value;\n\
   if (value.toString) return value.toString();\n\
   throw new CastError(this.path, 'string', value);\n\
-};//@ sourceURL=modelfactory/lib/schema/string.js"
+};\n\
+//# sourceURL=lib/schema/string.js"
 ));
-require.register("modelfactory/lib/schema/objectid.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema/mixed.js", Function("exports, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType');\n\
+var SchemaType = require(\"modelfactory/lib/schemaType.js\");\n\
+\n\
+/**\n\
+ * Constructor\n\
+ *\n\
+ * @param {String} key\n\
+ * @param {Object} options\n\
+ */\n\
+\n\
+function MixedType(key, options) {\n\
+  SchemaType.call(this, key, options, 'Mixed');\n\
+}\n\
+\n\
+/*!\n\
+ * extend SchemaType\n\
+ */\n\
+\n\
+MixedType.prototype.__proto__ = SchemaType.prototype;\n\
+\n\
+/*!\n\
+ * module exports\n\
+ */\n\
+\n\
+module.exports = MixedType;\n\
+\n\
+\n\
+//# sourceURL=lib/schema/mixed.js"
+));
+
+require.register("modelfactory/lib/schema/objectid.js", Function("exports, module",
+"/*!\n\
+ * module dependencies\n\
+ */\n\
+\n\
+var SchemaType = require(\"modelfactory/lib/schemaType.js\");\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -6730,15 +7279,18 @@ ObjectId.prototype.__proto__ = SchemaType.prototype;\n\
 \n\
 module.exports = ObjectId;\n\
 \n\
-//@ sourceURL=modelfactory/lib/schema/objectid.js"
+\n\
+//# sourceURL=lib/schema/objectid.js"
 ));
-require.register("modelfactory/lib/schema/documentarray.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema/documentarray.js", Function("exports, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType'),\n\
-    ModelArray = require('modelarray');\n\
+var SchemaType = require(\"modelfactory/lib/schemaType.js\"),\n\
+    Mixed = require(\"modelfactory/lib/schema/mixed.js\"),\n\
+    ModelArray = require(\"pgherveou~modelarray@0.0.8\");\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -6752,7 +7304,7 @@ function DocumentArray(key, options) {\n\
   var schema, Type, Model;\n\
 \n\
   // get SubDocument Schema & options\n\
-  schema = options.type[0];\n\
+  schema = options.type[0] || Mixed;\n\
 \n\
   if (schema.type && ('function' === typeof schema.type)) {\n\
     Type = DocumentArray.getSchemaType(schema.type);\n\
@@ -6887,15 +7439,17 @@ DocumentArray.prototype.max = function(val) {\n\
  */\n\
 \n\
 module.exports = DocumentArray;\n\
-//@ sourceURL=modelfactory/lib/schema/documentarray.js"
+\n\
+//# sourceURL=lib/schema/documentarray.js"
 ));
-require.register("modelfactory/lib/schema/embedded.js", Function("exports, require, module",
+
+require.register("modelfactory/lib/schema/embedded.js", Function("exports, module",
 "/*!\n\
  * module dependencies\n\
  */\n\
 \n\
-var SchemaType = require('../schemaType'),\n\
-    globals = require('../globals');\n\
+var SchemaType = require(\"modelfactory/lib/schemaType.js\"),\n\
+    globals = require(\"modelfactory/lib/globals.js\");\n\
 \n\
 /**\n\
  * Constructor\n\
@@ -6975,61 +7529,11 @@ EmbeddedDocument.prototype.doValidate = function (model) {\n\
  */\n\
 \n\
 module.exports = EmbeddedDocument;\n\
-//@ sourceURL=modelfactory/lib/schema/embedded.js"
+\n\
+//# sourceURL=lib/schema/embedded.js"
 ));
 
+require.modules["modelfactory"] = require.modules["modelfactory"];
 
 
-
-
-
-
-
-require.alias("component-emitter/index.js", "modelfactory/deps/emitter/index.js");
-require.alias("component-emitter/index.js", "emitter/index.js");
-require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
-
-require.alias("pgherveou-modelarray/index.js", "modelfactory/deps/modelarray/index.js");
-require.alias("pgherveou-modelarray/index.js", "modelfactory/deps/modelarray/index.js");
-require.alias("pgherveou-modelarray/index.js", "modelarray/index.js");
-require.alias("component-emitter/index.js", "pgherveou-modelarray/deps/emitter/index.js");
-require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
-
-require.alias("pgherveou-modelarray/index.js", "pgherveou-modelarray/index.js");
-require.alias("chaijs-chai/index.js", "modelfactory/deps/chai/index.js");
-require.alias("chaijs-chai/lib/chai.js", "modelfactory/deps/chai/lib/chai.js");
-require.alias("chaijs-chai/lib/chai/assertion.js", "modelfactory/deps/chai/lib/chai/assertion.js");
-require.alias("chaijs-chai/lib/chai/core/assertions.js", "modelfactory/deps/chai/lib/chai/core/assertions.js");
-require.alias("chaijs-chai/lib/chai/interface/assert.js", "modelfactory/deps/chai/lib/chai/interface/assert.js");
-require.alias("chaijs-chai/lib/chai/interface/expect.js", "modelfactory/deps/chai/lib/chai/interface/expect.js");
-require.alias("chaijs-chai/lib/chai/interface/should.js", "modelfactory/deps/chai/lib/chai/interface/should.js");
-require.alias("chaijs-chai/lib/chai/utils/addChainableMethod.js", "modelfactory/deps/chai/lib/chai/utils/addChainableMethod.js");
-require.alias("chaijs-chai/lib/chai/utils/addMethod.js", "modelfactory/deps/chai/lib/chai/utils/addMethod.js");
-require.alias("chaijs-chai/lib/chai/utils/addProperty.js", "modelfactory/deps/chai/lib/chai/utils/addProperty.js");
-require.alias("chaijs-chai/lib/chai/utils/eql.js", "modelfactory/deps/chai/lib/chai/utils/eql.js");
-require.alias("chaijs-chai/lib/chai/utils/flag.js", "modelfactory/deps/chai/lib/chai/utils/flag.js");
-require.alias("chaijs-chai/lib/chai/utils/getActual.js", "modelfactory/deps/chai/lib/chai/utils/getActual.js");
-require.alias("chaijs-chai/lib/chai/utils/getEnumerableProperties.js", "modelfactory/deps/chai/lib/chai/utils/getEnumerableProperties.js");
-require.alias("chaijs-chai/lib/chai/utils/getMessage.js", "modelfactory/deps/chai/lib/chai/utils/getMessage.js");
-require.alias("chaijs-chai/lib/chai/utils/getName.js", "modelfactory/deps/chai/lib/chai/utils/getName.js");
-require.alias("chaijs-chai/lib/chai/utils/getPathValue.js", "modelfactory/deps/chai/lib/chai/utils/getPathValue.js");
-require.alias("chaijs-chai/lib/chai/utils/getProperties.js", "modelfactory/deps/chai/lib/chai/utils/getProperties.js");
-require.alias("chaijs-chai/lib/chai/utils/index.js", "modelfactory/deps/chai/lib/chai/utils/index.js");
-require.alias("chaijs-chai/lib/chai/utils/inspect.js", "modelfactory/deps/chai/lib/chai/utils/inspect.js");
-require.alias("chaijs-chai/lib/chai/utils/objDisplay.js", "modelfactory/deps/chai/lib/chai/utils/objDisplay.js");
-require.alias("chaijs-chai/lib/chai/utils/overwriteMethod.js", "modelfactory/deps/chai/lib/chai/utils/overwriteMethod.js");
-require.alias("chaijs-chai/lib/chai/utils/overwriteProperty.js", "modelfactory/deps/chai/lib/chai/utils/overwriteProperty.js");
-require.alias("chaijs-chai/lib/chai/utils/test.js", "modelfactory/deps/chai/lib/chai/utils/test.js");
-require.alias("chaijs-chai/lib/chai/utils/transferFlags.js", "modelfactory/deps/chai/lib/chai/utils/transferFlags.js");
-require.alias("chaijs-chai/lib/chai/utils/type.js", "modelfactory/deps/chai/lib/chai/utils/type.js");
-require.alias("chaijs-chai/index.js", "modelfactory/deps/chai/index.js");
-require.alias("chaijs-chai/index.js", "chai/index.js");
-require.alias("chaijs-assertion-error/index.js", "chaijs-chai/deps/assertion-error/index.js");
-require.alias("chaijs-assertion-error/index.js", "chaijs-chai/deps/assertion-error/index.js");
-require.alias("chaijs-assertion-error/index.js", "chaijs-assertion-error/index.js");
-require.alias("chaijs-chai/index.js", "chaijs-chai/index.js");
-require.alias("visionmedia-mocha-cloud/client.js", "modelfactory/deps/mocha-cloud/client.js");
-require.alias("visionmedia-mocha-cloud/client.js", "modelfactory/deps/mocha-cloud/index.js");
-require.alias("visionmedia-mocha-cloud/client.js", "mocha-cloud/index.js");
-require.alias("visionmedia-mocha-cloud/client.js", "visionmedia-mocha-cloud/index.js");
-require.alias("modelfactory/lib/index.js", "modelfactory/index.js");
+require("modelfactory")

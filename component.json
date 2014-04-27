@@ -10,8 +10,8 @@
   },
 
   "development": {
-    "chaijs/chai": "*",
-    "visionmedia/mocha-cloud": "*"
+    "chaijs/chai": "master",
+    "visionmedia/mocha-cloud": "master"
   },
   "license": "MIT",
   "main": "lib/index.js",
@@ -33,6 +33,7 @@
     "lib/schema/boolean.js",
     "lib/schema/number.js",
     "lib/schema/string.js",
+    "lib/schema/mixed.js",
     "lib/schema/objectid.js",
     "lib/schema/documentarray.js",
     "lib/schema/embedded.js"
