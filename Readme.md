@@ -92,6 +92,93 @@ user.email = "johnyatgmail.com";
 console.log(user.validate()); // KO
   ```
 
+## reuse mongoose schema definition
+
+You can share your schema definition between node and the browser
+here is one way of doing it
+
+```js
+
+/*!
+ * user.shared.js
+ */
+
+module.exports = function (Schema) {
+
+  var User = new Schema({
+    email: {type: String, lowercase: true, match: emailRegex},
+    firstname: {type: String, min: 2},
+    lastname: {type: String, min: 2}
+  });
+
+  User.virtual('fullname').get(function () {
+    return this.firstname + ' ' + this.lastname;
+  });
+
+  User.method('greating').get(function () {
+    return 'Hello ' + this.fullname;
+  });
+
+  return User;
+};
+```
+
+```js
+
+/*!
+ * user.server.js
+ */
+
+var mongoose = require('mongoose'),
+    User = require('./user.shared')(mongoose.Schema);
+
+// create a user
+var user = new User({
+  email: 'pg@jogabo.com',
+  firstname: 'PG',
+  lastname: 'Herveou'
+});
+
+// ...
+
+// play with user
+user.fullname; // => PG Herveou
+user.validate(); // =>  no errs
+user.save();
+```
+
+```js
+
+/*!
+ * user.client.js
+ */
+
+var factory = require('modelfactory'),
+    User = require('./user.shared')(factory.Schema);
+
+// add some client specific methods
+User.prototype.save = function() { /* ... */ };
+
+// create a user
+var user = new User({
+  email: 'pg@jogabo.com',
+  firstname: 'PG',
+  lastname: 'Herveou'
+});
+
+// ...
+
+user.fullname; // => PG Herveou
+user.validate(); // => no errs
+
+// do something when firstname change
+user.on('change:firstname', function() { /*...*/});
+
+// => trigger change:firstname event
+user.firstname = 'Pierre-Guillaume';
+user.save();
+```
+
 ## API
   coming soon..
 
