@@ -1,4 +1,10 @@
 
+0.1.32 / 2014-04-27
+==================
+
+ * fixed pgherveou/modelfactory/issues/4 (make setter work with object and dot notation)
+ * update read me
+
 0.1.31 / 2014-04-27
 ==================
 
