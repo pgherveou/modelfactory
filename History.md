@@ -1,4 +1,9 @@
 
+0.1.31 / 2014-04-27
+==================
+
+ * fixed pgherveou/modelfactory/issues/6 add mixed types and support Array constructor as type
+
 0.1.29 / 2014-03-05
 ==================
 
