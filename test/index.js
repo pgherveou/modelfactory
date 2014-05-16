@@ -42,6 +42,11 @@ var UserSchema = new Schema({
 
     creditcard: String,
 
+    // test firefox watch
+    watch: {
+      stuff: Boolean
+    },
+
     age: {
       type: Number,
       min: 7,
@@ -273,6 +278,11 @@ describe('modelfactory specs', function() {
     expect(user.tags.slice()).to.deep.equal(['js']);
     expect(user.projects[0].name).to.eq('project1');
     expect(user.projects).to.have.length(2);
+  });
+
+  it('should not conflict with firefox watch', function() {
+    var user = new User({ watch: { stuff: true } });
+    expect(user.watch.stuff).to.be.true;
   });
 
   it ('should get a mixed property', function() {
