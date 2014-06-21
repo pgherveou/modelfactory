@@ -215,6 +215,12 @@ describe('modelfactory specs', function() {
     expect(create).to.not.have.throw();
   });
 
+  it('should create model without using new', function() {
+    var user = User({ email: 'test-new@gmail.com' });
+    expect(user).to.be.an.instanceof(User);
+    expect(user.email).to.eq('test-new@gmail.com');
+  });
+
   it('should use models saved in backing store to generate new instance', function () {
     var doc = { _id: 1, email: 'test@gmail.com' },
         u1 = new User(doc),
