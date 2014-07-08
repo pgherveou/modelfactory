@@ -187,7 +187,7 @@ Here is an example of a Post model that reference a User model.
 
 ```js
 
-/**
+/*!
  * post.shared.js
  */
 
@@ -198,7 +198,10 @@ module.exports = function(Schema) {
   });
 };
 
-/**
+```
+```js
+
+/*!
  * post.server.js
  */
  
@@ -207,8 +210,10 @@ var mongoose = require('mongoose'),
 
 schema.add({  _from: { type: ObjectId, ref: 'User' });
 module.exports = schema;
+```
+```js
 
-/**
+/*!
  * post.client.js
  */
  
@@ -219,9 +224,6 @@ var factory = require('modelfactory'),
 schema.add({  _from:  User });
 module.exports = schema;
 ```
-
-
-
 
 ## API
   coming soon..
