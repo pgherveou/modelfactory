@@ -92,7 +92,7 @@ user.email = "johnyatgmail.com";
 console.log(user.validate()); // KO
   ```
 
-## reuse mongoose schema definition
+### reuse mongoose schema definition
 
 You can share your schema definition between node and the browser
 here is one way of doing it
