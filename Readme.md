@@ -98,7 +98,6 @@ You can share your schema definition between node and the browser
 here is one way of doing it
 
 ```js
-
 /*!
  * user.shared.js
  */
@@ -124,7 +123,6 @@ module.exports = function (Schema) {
 ```
 
 ```js
-
 /*!
  * user.server.js
  */
@@ -148,7 +146,6 @@ user.save();
 ```
 
 ```js
-
 /*!
  * user.client.js
  */
@@ -186,7 +183,6 @@ Here is an example of a Post model that reference a User model.
 
 
 ```js
-
 /*!
  * post.shared.js
  */
@@ -197,7 +193,6 @@ module.exports = function(Schema) {
     msg: { type: String, trim: true, required: true },
   });
 };
-
 ```
 ```js
 
@@ -212,7 +207,6 @@ schema.add({  _from: { type: ObjectId, ref: 'User' });
 module.exports = schema;
 ```
 ```js
-
 /*!
  * post.client.js
  */
