@@ -119,7 +119,6 @@ var UserSchema = new Schema({
     }
   });
 
-
 UserSchema.store.index('email');
 
 UserSchema.path('name.last').set(function(v) {
@@ -715,6 +714,32 @@ describe('modelfactory specs', function() {
     UserSchema.path('creditcard').validators.push([validator, 'cc-validator']);
     user.validate();
     expect(called).to.be.ok;
+  });
+
+  it.only('should use json transform options', function() {
+    var json = user.toJSON(),
+        json1 = { name: json.name },
+        json2 = { email: json.email },
+        json3 = user.toJSON();
+
+    User.schema.set('toJSON', {
+      transform: function t1(doc, ret) {
+        return { name: ret.name };
+      }
+    });
+
+    function t2(doc, ret) {
+      return { email: ret.email };
+    };
+
+    delete json3.name;
+    function t3(doc, ret) {
+      delete ret.name;
+    };
+
+    expect(user.toJSON()).to.deep.eq(json1);
+    expect(user.toJSON({ transform: t2 })).to.deep.eq(json2);
+    expect(user.toJSON({ transform: t3 })).to.deep.eq(json3);
   });
 
 });
