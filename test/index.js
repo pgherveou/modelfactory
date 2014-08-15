@@ -788,4 +788,13 @@ describe('modelfactory specs', function() {
     expect(user.projects[0].modifiedPaths()).to.have.length(0);
   });
 
+  it('should pick modified paths', function() {
+    user.email = 'other@email.com';
+    user.project.name = 'bar2';
+    expect(user.pickModifiedPaths()).to.deep.eq({
+      email: user.email,
+      project: user.project.toJSON()
+    });
+  });
+
 });
