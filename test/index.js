@@ -215,7 +215,7 @@ describe('modelfactory specs', function() {
   });
 
   it('should create model without using new', function() {
-    var user = User({ email: 'test-new@gmail.com' });
+    var user = User({ email: 'test-new@gmail.com' }); // jshint ignore:line
     expect(user).to.be.an.instanceof(User);
     expect(user.email).to.eq('test-new@gmail.com');
   });
@@ -716,7 +716,7 @@ describe('modelfactory specs', function() {
     expect(called).to.be.ok;
   });
 
-  it.only('should use json transform options', function() {
+  it('should use json transform options', function() {
     var json = user.toJSON(),
         json1 = { name: json.name },
         json2 = { email: json.email },
@@ -730,16 +730,62 @@ describe('modelfactory specs', function() {
 
     function t2(doc, ret) {
       return { email: ret.email };
-    };
+    }
 
     delete json3.name;
     function t3(doc, ret) {
       delete ret.name;
-    };
+    }
 
     expect(user.toJSON()).to.deep.eq(json1);
     expect(user.toJSON({ transform: t2 })).to.deep.eq(json2);
     expect(user.toJSON({ transform: t3 })).to.deep.eq(json3);
+  });
+
+  it('should get modified paths', function() {
+
+    // init length
+    expect(user.modifiedPaths()).to.have.length(0);
+
+    // after setting
+    user.email = 'new@email.com';
+    expect(user.modifiedPaths()).to.deep.eq(['email']);
+
+    // after setting same ppty
+    user.email = 'other@email.com';
+    expect(user.modifiedPaths()).to.deep.eq(['email']);
+
+    // after setting nested ppty
+    user.set({ name: { first: 'foo', last: 'bar' } });
+    expect(user.modifiedPaths()).to.have.length(3);
+    expect(user.modifiedPaths()).to.include.members(['name.first', 'name.last']);
+
+    // after setting embedded
+    user.project.name = 'bar2';
+    user.modifiedPaths();
+    expect(user.modifiedPaths()).to.have.length(4);
+    expect(user.modifiedPaths()).to.include.members(['project']);
+    expect(user.project.modifiedPaths()).to.deep.eq(['name']);
+
+    // after setting array
+    user.projects[0].name = 'bar3';
+    expect(user.modifiedPaths()).to.have.length(5);
+    expect(user.modifiedPaths()).to.include.members(['projects']);
+    expect(user.projects[0].modifiedPaths()).to.deep.eq(['name']);
+  });
+
+  it('should clear modified paths', function() {
+    user.email = 'other@email.com';
+    user.project.name = 'bar2';
+    user.projects[0].name = 'bar3';
+    expect(user.modifiedPaths()).to.have.length(3);
+    expect(user.project.modifiedPaths()).to.have.length(1);
+    expect(user.projects[0].modifiedPaths()).to.have.length(1);
+
+    user.clearModifiedPaths();
+    expect(user.modifiedPaths()).to.have.length(0);
+    expect(user.project.modifiedPaths()).to.have.length(0);
+    expect(user.projects[0].modifiedPaths()).to.have.length(0);
   });
 
 });
