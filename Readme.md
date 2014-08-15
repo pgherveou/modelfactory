@@ -92,13 +92,12 @@ user.email = "johnyatgmail.com";
 console.log(user.validate()); // KO
   ```
 
-## reuse mongoose schema definition
+### reuse mongoose schema definition
 
 You can share your schema definition between node and the browser
 here is one way of doing it
 
 ```js
-
 /*!
  * user.shared.js
  */
@@ -124,7 +123,6 @@ module.exports = function (Schema) {
 ```
 
 ```js
-
 /*!
  * user.server.js
  */
@@ -148,7 +146,6 @@ user.save();
 ```
 
 ```js
-
 /*!
  * user.client.js
  */
@@ -177,6 +174,49 @@ user.on('change:firstname', function() { /*...*/});
 // => trigger change:firstname event
 user.firstname = 'Pierre-Guillaume';
 user.save();
+```
+
+### Reuse models & ref / populate
+
+Usually you set your client model with populated objects coming from the server
+Here is an example of a Post model that reference a User model.
+
+
+```js
+/*!
+ * post.shared.js
+ */
+
+module.exports = function(Schema) {
+  return new Schema({
+    date: { type: Date, required: true },
+    msg: { type: String, trim: true, required: true },
+  });
+};
+```
+```js
+
+/*!
+ * post.server.js
+ */
+ 
+var mongoose = require('mongoose'),
+    schema = require('./post.shared')(mongoose.Schema);
+
+schema.add({  _from: { type: ObjectId, ref: 'User' });
+module.exports = schema;
+```
+```js
+/*!
+ * post.client.js
+ */
+ 
+var factory = require('modelfactory'),
+    User = require('./user').schema;
+    schema = require('./post.shared')(factory);
+
+schema.add({  _from:  User });
+module.exports = schema;
 ```
 
 ## API
