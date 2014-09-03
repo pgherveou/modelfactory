@@ -76,6 +76,11 @@ var UserSchema = new Schema({
 
     projectRef: { type: ObjectId, ref: 'Project' },
 
+    projectRefs: [{
+      type: ObjectId,
+      ref: 'Project'
+    }],
+
     projects: [ProjectSchema],
 
     projects2: {
@@ -446,6 +451,21 @@ describe('modelfactory specs', function() {
 
     user.projectRef = p;
     expect(user.projectRef).to.eq(p);
+  });
+
+  it('should cast ObjectIds value', function() {
+    var p;
+
+    user.projectRefs = [{ name: 'boo'}];
+    expect(user.projectRefs[0]).to.be.instanceof(ProjectSchema.model);
+
+    p = new ProjectSchema.model({
+      name: 'other project ref',
+      category: 'web'
+    });
+
+    user.projectRefs = [p];
+    expect(user.projectRefs[0]).to.eq(p);
   });
 
   it('should set default values', function () {
