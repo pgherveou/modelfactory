@@ -13,7 +13,7 @@ modelfactory.plugin(function(schema) {
   schema.static('save', function() {});
 });
 
-//Sample Project sche
+//Sample Project schema
 var ProjectSchema = new Schema({
   name: {type: String},
   category: {type: String, enum: ['Web', 'Mobile']}
@@ -71,7 +71,10 @@ var UserSchema = new Schema({
       type: ObjectId
     },
 
+
     project: {type: ProjectSchema, required: true},
+
+    projectRef: { type: ObjectId, ref: 'Project' },
 
     projects: [ProjectSchema],
 
@@ -153,7 +156,7 @@ UserSchema.virtual('name.full').set(function(v) {
 });
 
 var User = model('User', UserSchema),
-    Project = model(ProjectSchema),
+    Project = model('Project', ProjectSchema),
     user,
     emit;
 
@@ -422,6 +425,29 @@ describe('modelfactory specs', function() {
     expect(user.project).to.eq(p2);
   });
 
+  it('should cast ObjectId value', function() {
+    var p;
+
+    user.projectRef = '123';
+    expect(user.projectRef).to.eq('123');
+
+    user.projectRef = {
+      name: 'some project ref',
+      category: 'web'
+    };
+
+    expect(user.projectRef).to.be.instanceof(ProjectSchema.model);
+    expect(user.projectRef.name).eq('some project ref');
+
+    p = new ProjectSchema.model({
+      name: 'other project ref',
+      category: 'web'
+    });
+
+    user.projectRef = p;
+    expect(user.projectRef).to.eq(p);
+  });
+
   it('should set default values', function () {
     expect(user.createdAt).to.be.ok;
     expect(user.defaultStuff).to.eq('stuff');
@@ -555,18 +581,17 @@ describe('modelfactory specs', function() {
     expect(user.one.two.tree).to.eq(false);
   });
 
-  it ('should set and proxy event to parentArray', function () {
-    var project = user.projects[0];
+  it ('should set and proxy event to parent', function () {
 
     user.projects.on('change:name', function () {
       emit++;
     });
 
-    project.on('change:name', function () {
+    user.projects.on('change', function () {
       emit++;
     });
 
-    project.name = 'other';
+    user.projects[0].name = 'projects-0-x';
     expect(emit).to.eq(2);
   });
 
