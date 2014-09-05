@@ -1,4 +1,9 @@
 
+0.2.2 / 2014-09-05
+==================
+
+ * quick fix bug with different array definition
+
 0.2.1 / 2014-09-03
 ==================
 
