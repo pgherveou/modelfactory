@@ -76,10 +76,10 @@ var UserSchema = new Schema({
 
     projectRef: { type: ObjectId, ref: 'Project' },
 
-    projectRefs: [{
-      type: ObjectId,
+    projectRefs: {
+      type: [ObjectId],
       ref: 'Project'
-    }],
+    },
 
     projects: [ProjectSchema],
 
